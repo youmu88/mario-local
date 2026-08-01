@@ -1,11 +1,9 @@
 /* 离线 Service Worker */
-const CACHE = 'super-mario-v1';
+const CACHE = 'super-mario-v2';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/style.css',
-  './js/config.js','./js/sprites.js','./js/input.js','./js/audio.js',
-  './js/physics.js','./js/levelgen.js','./js/level.js','./js/entities.js',
-  './js/render.js','./js/game.js','./js/ui.js','./js/main.js',
-  './assets/icon.svg','./assets/icon-512.png','./assets/icon-192.png'
+  './js/game.all.js',
+  './assets/icon.svg'
 ];
 
 self.addEventListener('install', e => {

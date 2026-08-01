@@ -83,3 +83,9 @@ sprite-mario/
 - Playwright + Chrome 端到端：菜单渲染、4项配置切换、游戏启动、键盘操作，0 JS 错误
 - 修复 list：choice const→let、entities 重复导出、index.html script 加 type=module、config 导出 StartConfig/PX、sprites 导入 PX
 
+## 7. v1.1 黑屏修复记录
+- **根因**：index.html 使用 `<script type="module">` 加载 ES module 脚本；用户直接双击 index.html（`file://` 协议）时，浏览器 CORS 同源策略拦截所有 module 加载（origin 'null'），JS 全部不执行 → 黑屏。
+- **修复**：将 13 个 ES module 源码合并为单文件非模块脚本 `js/game.all.js`（剥离 import/export），index.html 改用普通 `<script src="js/game.all.js">` 加载；同步更新 sw.js 缓存清单为 game.all.js 并升缓存版本 v2。
+- **验证**：Chrome 无头 `file://` 协议加载——菜单渲染、进入游戏画布非空、0 JS 错误；HTTP 场景同样 PASS。
+
+

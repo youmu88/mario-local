@@ -79,7 +79,7 @@ export class Player {
     if (input.consumeFire() && this.fire){
       if (this.world.bullets.filter(b=>b.alive).length<2){
         const by = this.small? this.y+4 : this.y+this.h*0.35;
-        this.world.bullets.push(newBullet(this.x + (this.dir>0? this.w:0) - 7, by, this.dir));
+        this.world.bullets.push(new Bullet(this.x + (this.dir>0? this.w:0) - 7, by, this.dir));
         sfx.fire();
       }
     }

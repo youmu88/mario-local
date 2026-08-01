@@ -16,6 +16,7 @@ export class World {
     this.blocks = gen.blocks;
     this.spawnDefs = gen.spawns;
     this.flagX = gen.flagX;
+    this.startX = gen.startX;
     this.levelW = this.w * TILE;
 
     // 相机

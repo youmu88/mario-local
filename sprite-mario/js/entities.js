@@ -30,8 +30,8 @@ export class PowerUp {
     }
     this.x += this.vx;
     this.y += this.vy;
-    // 跟地面
-    const gy = world.tileY*TILE - this.h;
+    // 落到地面(玩家同一基准: groundY)
+    const gy = world.groundY*TILE - this.h;
     if (this.vy>0 && this.y >= gy){ this.y=gy; this.vy=0; }
     // 碰到障碍反向
     const col = world.solidAt(this.x, this.y, this.w, this.h);
@@ -75,8 +75,8 @@ class Enemy {
     if ((ahead || !edge) && !this.inAir(world)) this.vx=-this.vx;
     this.x += this.vx;
   }
-  inAir(world){ const gy=world.tileY*TILE-this.h; return Math.abs((this.y)-gy)>2; }
-  applyGravity(world){ this.vy+=0.5; this.y+=this.vy; const gy=world.tileY*TILE-this.h; if(this.y>=gy){this.y=gy;this.vy=0;this.vx=this.vx; } }
+  inAir(world){ const gy=world.groundY*TILE-this.h; return Math.abs((this.y)-gy)>2; }
+  applyGravity(world){ this.vy+=0.5; this.y+=this.vy; const gy=world.groundY*TILE-this.h; if(this.y>=gy){this.y=gy;this.vy=0; } }
   worldSolidAhead(world){
     const side = this.vx>0 ? this.x+this.w+2 : this.x-2;
     const tx=Math.floor(side/TILE); const ty=Math.floor((this.y+this.h/2)/TILE);
@@ -107,13 +107,10 @@ export class Bullet {
     this.age++;
     if (this.age>240){ this.alive=false; return; }
     this.vy+=0.6; this.x+=this.vx; this.y+=this.vy;
-    const gy = world.tileY*TILE-22;
+    const gy = world.groundY*TILE-22;
     if (this.vy>0 && this.y>=gy){ this.y=gy; this.vy=-4; } // 弹跳
-    // 出界
-    if (this.x < world.camX-20 || this.x>TILE) {
-      if (this.x > world.w*TILE || this.x < -40) this.alive=false;
-    }
-    if (this.y > world.h*TILE+40) this.alive=false;
+    // 出界(屏幕外较远处 或 掉出世界底部)
+    if (this.x < -60 || this.x > world.w*TILE+60 || this.y > world.h*TILE+60) this.alive=false;
   }
 }
 

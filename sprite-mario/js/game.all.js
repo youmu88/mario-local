@@ -621,8 +621,8 @@ class PowerUp {
     }
     this.x += this.vx;
     this.y += this.vy;
-    // 跟地面
-    const gy = world.tileY*TILE - this.h;
+    // 落到地面(玩家同一基准: groundY)
+    const gy = world.groundY*TILE - this.h;
     if (this.vy>0 && this.y >= gy){ this.y=gy; this.vy=0; }
     // 碰到障碍反向
     const col = world.solidAt(this.x, this.y, this.w, this.h);
@@ -666,8 +666,8 @@ class Enemy {
     if ((ahead || !edge) && !this.inAir(world)) this.vx=-this.vx;
     this.x += this.vx;
   }
-  inAir(world){ const gy=world.tileY*TILE-this.h; return Math.abs((this.y)-gy)>2; }
-  applyGravity(world){ this.vy+=0.5; this.y+=this.vy; const gy=world.tileY*TILE-this.h; if(this.y>=gy){this.y=gy;this.vy=0;this.vx=this.vx; } }
+  inAir(world){ const gy=world.groundY*TILE-this.h; return Math.abs((this.y)-gy)>2; }
+  applyGravity(world){ this.vy+=0.5; this.y+=this.vy; const gy=world.groundY*TILE-this.h; if(this.y>=gy){this.y=gy;this.vy=0; } }
   worldSolidAhead(world){
     const side = this.vx>0 ? this.x+this.w+2 : this.x-2;
     const tx=Math.floor(side/TILE); const ty=Math.floor((this.y+this.h/2)/TILE);
@@ -698,13 +698,10 @@ class Bullet {
     this.age++;
     if (this.age>240){ this.alive=false; return; }
     this.vy+=0.6; this.x+=this.vx; this.y+=this.vy;
-    const gy = world.tileY*TILE-22;
+    const gy = world.groundY*TILE-22;
     if (this.vy>0 && this.y>=gy){ this.y=gy; this.vy=-4; } // 弹跳
-    // 出界
-    if (this.x < world.camX-20 || this.x>TILE) {
-      if (this.x > world.w*TILE || this.x < -40) this.alive=false;
-    }
-    if (this.y > world.h*TILE+40) this.alive=false;
+    // 出界(屏幕外较远处 或 掉出世界底部)
+    if (this.x < -60 || this.x > world.w*TILE+60 || this.y > world.h*TILE+60) this.alive=false;
   }
 }
 
@@ -728,6 +725,7 @@ class World {
     this.blocks = gen.blocks;
     this.spawnDefs = gen.spawns;
     this.flagX = gen.flagX;
+    this.startX = gen.startX;
     this.levelW = this.w * TILE;
 
     // 相机
@@ -860,7 +858,7 @@ class Player {
     if (input.consumeFire() && this.fire){
       if (this.world.bullets.filter(b=>b.alive).length<2){
         const by = this.small? this.y+4 : this.y+this.h*0.35;
-        this.world.bullets.push(newBullet(this.x + (this.dir>0? this.w:0) - 7, by, this.dir));
+        this.world.bullets.push(new Bullet(this.x + (this.dir>0? this.w:0) - 7, by, this.dir));
         sfx.fire();
       }
     }
@@ -1347,10 +1345,9 @@ class Game {
 
   hurtPlayer(){
     const p = this.player;
-    if (p.starT>0) return;
-    p.starT = 120;  // 受伤短暂无敌(闪烁)
-    p.damage();
+    if (p.hurtFlashT>0 || p.starT>0) return;  // 无敌期(星星)或受伤闪烁期不再受伤
     p.hurtFlashT=80;
+    p.damage();   // 大变小 / 小死亡
     this.sfx.hurt();
     if (!p.alive){ this.sfx.die(); p.startDying(); this.state='dying'; }
   }

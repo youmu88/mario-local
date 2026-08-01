@@ -138,10 +138,9 @@ export class Game {
 
   hurtPlayer(){
     const p = this.player;
-    if (p.starT>0) return;
-    p.starT = 120;  // 受伤短暂无敌(闪烁)
-    p.damage();
+    if (p.hurtFlashT>0 || p.starT>0) return;  // 无敌期(星星)或受伤闪烁期不再受伤
     p.hurtFlashT=80;
+    p.damage();   // 大变小 / 小死亡
     this.sfx.hurt();
     if (!p.alive){ this.sfx.die(); p.startDying(); this.state='dying'; }
   }

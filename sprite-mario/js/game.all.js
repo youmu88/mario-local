@@ -319,7 +319,45 @@ SPRITES['spiny'] = makeSprite([
   '...RR....RR...',
   '...RR....RR...',
 ], PAL);
-SPRITES['spiny_w2'] = SPRITES['spiny'];
+/* ===== 尖刺龟行走帧B（腿并拢迈步，与 spiny 张开腿交替 = 走路动画） ===== */
+SPRITES['spiny_w2'] = makeSprite([
+  '....WW..WW....',
+  '...W..WW..W...',
+  '..W..RRRR..W..',
+  '.W..RRRRRR..W.',
+  '....RRRRRR....',
+  '...RRWWRRWW...',
+  '..RRRRRRRRRR..',
+  '..RRKRRRRKRR..',
+  '..RRRRRRRRRR..',
+  '...RRRRRRRR...',
+  '...RgRRRRgR...',
+  '....RRRRRR....',
+  '.....RRRR.....',
+  '.....RRRR.....',
+  '.....RRRR.....',
+  '.....RRRR.....',
+], PAL);
+
+/* ===== 尖刺龟压扁帧（被消灭后显示，眼睛压扁） ===== */
+SPRITES['spiny_squash'] = makeSprite([
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '..RRRRRRRRRRRR..',
+  '..RRKRRRRRRKRR..',
+  '..RRRRRRRRRRRR..',
+  '...RRRRRRRRRR...',
+  '....RRRRRRRR....',
+  '.....RRRRRR.....',
+], PAL);
 
 /* ===== 蘑菇（红，变大道具） 16x16 ===== */
 SPRITES['mushroom'] = makeSprite([
@@ -518,6 +556,8 @@ SPRITES['mario_small_run3'] = SPRITES['mario_small'];
 SPRITES['mario_small_run4'] = SPRITES['mario_small'];
 SPRITES['mario_small_jump'] = SPRITES['mario_small'];
 SPRITES['mario_big_run'] = SPRITES['mario_big'];
+SPRITES['mario_big_runB'] = SPRITES['mario_big'];
+SPRITES['mario_big_runC'] = SPRITES['mario_big'];
 
 /* ===== 官方马里奥主题素材（assets/sprites/*.png，异步加载后替换程序化精灵） =====
  * 素材来源（本仓库 assets/sprites/ 目录）：
@@ -568,6 +608,16 @@ function makeFlyerFrame(baseCanvas, wingFlip){
   return c;
 }
 
+// 从大马里奥跑步单帧生成"腾空(上移)/落地(下移)"派生帧，构成 3 帧跑步弹跳循环（不插站立帧）
+function makeBigRunFrame(baseCanvas, dy){
+  const c = document.createElement('canvas');
+  c.width = baseCanvas.width; c.height = baseCanvas.height;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.drawImage(baseCanvas, 0, dy);
+  return c;
+}
+
 let officialLoaded = 0;
 const OFFICIAL_TOTAL = Object.keys(OFFICIAL_URLS).length;
 
@@ -579,6 +629,11 @@ function loadOfficialSprite(key, url){
     c.getContext('2d').drawImage(img, 0, 0);
     SPRITES[key] = c;
     officialLoaded++;
+    // 大马里奥跑步：由单帧派生腾空/落地帧（官方素材加载后自动启用 3 帧跑步动画）
+    if (key==='mario_big_run'){
+      SPRITES['mario_big_runB'] = makeBigRunFrame(c, -1);
+      SPRITES['mario_big_runC'] = makeBigRunFrame(c, 1);
+    }
     // 飞行帧：goomba + 翅膀（goomba 就绪后合成）
     if (key==='goomba' || key==='goomba_w2'){
       const target = key==='goomba' ? 'flyer' : 'flyer_w2';
@@ -1402,7 +1457,8 @@ class Renderer {
     }
     // 被消灭：压扁形态
     if(e.dead){
-      const spr = e.type==='koopa' ? SPRITES.koopa_shell : SPRITES.goomba_squash;
+      const spr = e.type==='koopa' ? SPRITES.koopa_shell
+        : (e.type==='spiny' ? SPRITES.spiny_squash : SPRITES.goomba_squash);
       if (spr) this.drawSprite(ctx, spr, px, e.y + e.h - 12, {flip, fit:12});
       else { ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y+e.h-6,e.w,6); }
       return;
@@ -1418,7 +1474,10 @@ class Renderer {
     else if (e.type==='flyer'){ spr = e.frame ? SPRITES.flyer_w2 : SPRITES.flyer; }
     else if (e.type==='goomba'){ spr = e.frame ? SPRITES.goomba_w2 : SPRITES.goomba; }
     else { spr = e.frame ? SPRITES.koopa_w2 : SPRITES.koopa; }
-    if (spr) this.drawSprite(ctx, spr, px, e.y, {flip, fit:TILE});
+    let sx = px;
+    // goomba 走路重心摆动：帧A偏后、帧B向移动方向前倾 1px，增强对称素材的方向感
+    if (e.type==='goomba' && e.dir) sx = px + e.dir * (e.frame ? 1 : -1);
+    if (spr) this.drawSprite(ctx, spr, sx, e.y, {flip, fit:TILE});
     else { ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y,e.w,e.h); }
   }
 
@@ -1438,7 +1497,12 @@ class Renderer {
       } else spr = SPRITES.mario_small;
     } else {
       if (!player.onGround){ spr = SPRITES.mario_big; }
-      else if (Math.abs(player.vx)>0.1){ spr = Math.floor(player.frames/7)%2 ? SPRITES.mario_big_run : SPRITES.mario_big; }
+      else if (Math.abs(player.vx)>0.1){
+        // 大马里奥跑步：3 帧弹跳循环 [跑, 腾空, 落地]，不插入站立帧，动画更顺滑
+        const r = Math.floor(player.frames/5)%3;
+        spr = r===0 ? SPRITES.mario_big_run
+          : (r===1 ? SPRITES.mario_big_runB : SPRITES.mario_big_runC);
+      }
       else spr = SPRITES.mario_big;
     }
     if(!spr) spr = SPRITES.mario_small;

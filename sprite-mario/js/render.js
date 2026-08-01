@@ -118,7 +118,8 @@ export class Renderer {
     }
     // 被消灭：压扁形态
     if(e.dead){
-      const spr = e.type==='koopa' ? SPRITES.koopa_shell : SPRITES.goomba_squash;
+      const spr = e.type==='koopa' ? SPRITES.koopa_shell
+        : (e.type==='spiny' ? SPRITES.spiny_squash : SPRITES.goomba_squash);
       if (spr) this.drawSprite(ctx, spr, px, e.y + e.h - 12, {flip, fit:12});
       else { ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y+e.h-6,e.w,6); }
       return;
@@ -134,7 +135,10 @@ export class Renderer {
     else if (e.type==='flyer'){ spr = e.frame ? SPRITES.flyer_w2 : SPRITES.flyer; }
     else if (e.type==='goomba'){ spr = e.frame ? SPRITES.goomba_w2 : SPRITES.goomba; }
     else { spr = e.frame ? SPRITES.koopa_w2 : SPRITES.koopa; }
-    if (spr) this.drawSprite(ctx, spr, px, e.y, {flip, fit:TILE});
+    let sx = px;
+    // goomba 走路重心摆动：帧A偏后、帧B向移动方向前倾 1px，增强对称素材的方向感
+    if (e.type==='goomba' && e.dir) sx = px + e.dir * (e.frame ? 1 : -1);
+    if (spr) this.drawSprite(ctx, spr, sx, e.y, {flip, fit:TILE});
     else { ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y,e.w,e.h); }
   }
 
@@ -154,7 +158,12 @@ export class Renderer {
       } else spr = SPRITES.mario_small;
     } else {
       if (!player.onGround){ spr = SPRITES.mario_big; }
-      else if (Math.abs(player.vx)>0.1){ spr = Math.floor(player.frames/7)%2 ? SPRITES.mario_big_run : SPRITES.mario_big; }
+      else if (Math.abs(player.vx)>0.1){
+        // 大马里奥跑步：3 帧弹跳循环 [跑, 腾空, 落地]，不插入站立帧，动画更顺滑
+        const r = Math.floor(player.frames/5)%3;
+        spr = r===0 ? SPRITES.mario_big_run
+          : (r===1 ? SPRITES.mario_big_runB : SPRITES.mario_big_runC);
+      }
       else spr = SPRITES.mario_big;
     }
     if(!spr) spr = SPRITES.mario_small;

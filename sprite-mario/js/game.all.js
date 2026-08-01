@@ -1,4 +1,4 @@
-/* ===== SUPER MARIO - 单文件构建版 (自动生成) ===== */
+/* ===== SUPER MARIO - 单文件构建版 (自动生成，避免 file:// 下 ES module CORS 黑屏) ===== */
 /* 来源: js/*.js (ES module) 合并去模块化 */
 ;(function(){
 "use strict";

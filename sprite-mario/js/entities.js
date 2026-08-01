@@ -111,7 +111,7 @@ class Enemy {
   }
   noEdgeAhead(world){
     const side = this.vx>0 ? this.x+this.w+4 : this.x-4;
-    const tx=Math.floor(side/TILE); const ty=Math.floor((this.y+this.h)/TILE)+1;
+    const tx=Math.floor(side/TILE); const ty=Math.floor((this.y+this.h)/TILE); // 脚底所在行(H=12时+1越界恒0导致原地抖动)
     if (tx>=world.w) return true;
     return world.tileAt(tx,ty)!==0;
   }

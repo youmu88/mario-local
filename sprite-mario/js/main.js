@@ -38,6 +38,7 @@ function init(){
   game = new Game(renderer, input, sfx, (st)=>{
     if (st==='playing') ui.hideAll();
     else if (st==='gameover') ui.showResult('gameover', game);
+    else if (st==='clear') ui.showResult('clear', game);   // 过关：显示 COURSE CLEAR + 下一关按钮
     else if (st==='dying') { /* 死亡由后续显示 */ }
   });
   ui.mount();

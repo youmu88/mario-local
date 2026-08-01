@@ -593,7 +593,8 @@ function loadOfficialSprite(key, url){
     let c = document.createElement('canvas');
     c.width = img.width; c.height = img.height;
     c.getContext('2d').drawImage(img, 0, 0);
-    if (key.indexOf('mario_')===0) c = flipCanvas(c);   // 官方 mario 帧统一镜像为面向右
+    // 官方 mario 帧统一镜像为面向右；mario_7(大马里奥跑)素材本身面向右，不翻转(避免头部反向)
+    if (key.indexOf('mario_')===0 && key!=='mario_big_run') c = flipCanvas(c);
     SPRITES[key] = c;
     officialLoaded++;
     // 大马里奥跑步：由单帧派生腾空/落地帧（官方素材加载后自动启用 3 帧跑步动画）

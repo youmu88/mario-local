@@ -225,7 +225,7 @@ export class Game {
     this.addScore(1000);
     this.state='clear';
     this.clearT=0;
-    this.onStateChange('hud', this);
+    this.onStateChange('clear', this);  // 通知 UI 显示过关界面（此前发 hud 导致无入口卡死）
   }
 
   updateCamera(){

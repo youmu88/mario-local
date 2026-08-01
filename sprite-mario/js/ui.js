@@ -97,9 +97,8 @@ export class UI {
     const btn = s.querySelector('.primary-btn');
     if (type==='gameover') btn.addEventListener('click', ()=>this.showMenu());
     else btn.addEventListener('click', ()=>this.onRetry());
-    // 自动消失(clear)
+    // clear 界面常驻直至点击"继续下一关"（不自动移除按钮，避免无入口卡死）
     if (type==='clear'){
-      setTimeout(()=>{ if (s.parentNode===this.overlay) s.remove(); }, 1600);
       setTimeout(()=>{ document.getElementById('touch-controls').classList.remove('hidden'); }, 400);
     }
   }

@@ -46,9 +46,8 @@ export function generateLevel(levelNo, seedStr){
   const GROUND = 5;
   const w = 200 + levelNo*8;        // 关卡长度随关卡增长
   const tiles = createEmpty(w, H);
-  // 地板
+  // 地板（单行：H=12 时 tiles[groundY+1] 越界恒不生效，地面仅一行，脚底行=groundY）
   for (let x=0;x<w;x++) tiles[groundY][x] = GROUND;
-  for (let x=0;x<w;x++) tiles[groundY+1] && (tiles[groundY+1][x]=GROUND);
 
   const spawns = [];   // { x, type, y }
   const blocks=[];     // 特殊块: { x, y, kind:'?'|'b' , content }

@@ -640,7 +640,8 @@ function loadOfficialSprite(key, url){
     let c = document.createElement('canvas');
     c.width = img.width; c.height = img.height;
     c.getContext('2d').drawImage(img, 0, 0);
-    if (key.indexOf('mario_')===0) c = flipCanvas(c);   // 官方 mario 帧统一镜像为面向右
+    // 官方 mario 帧统一镜像为面向右；mario_7(大马里奥跑)素材本身面向右，不翻转(避免头部反向)
+    if (key.indexOf('mario_')===0 && key!=='mario_big_run') c = flipCanvas(c);
     SPRITES[key] = c;
     officialLoaded++;
     // 大马里奥跑步：由单帧派生腾空/落地帧（官方素材加载后自动启用 3 帧跑步动画）
@@ -797,9 +798,8 @@ function generateLevel(levelNo, seedStr){
   const GROUND = 5;
   const w = 200 + levelNo*8;        // 关卡长度随关卡增长
   const tiles = createEmpty(w, H);
-  // 地板
+  // 地板（单行：H=12 时 tiles[groundY+1] 越界恒不生效，地面仅一行，脚底行=groundY）
   for (let x=0;x<w;x++) tiles[groundY][x] = GROUND;
-  for (let x=0;x<w;x++) tiles[groundY+1] && (tiles[groundY+1][x]=GROUND);
 
   const spawns = [];   // { x, type, y }
   const blocks=[];     // 特殊块: { x, y, kind:'?'|'b' , content }
@@ -1070,7 +1070,7 @@ class Enemy {
   }
   noEdgeAhead(world){
     const side = this.vx>0 ? this.x+this.w+4 : this.x-4;
-    const tx=Math.floor(side/TILE); const ty=Math.floor((this.y+this.h)/TILE)+1;
+    const tx=Math.floor(side/TILE); const ty=Math.floor((this.y+this.h)/TILE); // 脚底所在行(H=12时+1越界恒0导致原地抖动)
     if (tx>=world.w) return true;
     return world.tileAt(tx,ty)!==0;
   }
@@ -2000,7 +2000,7 @@ class Game {
     this.addScore(1000);
     this.state='clear';
     this.clearT=0;
-    this.onStateChange('hud', this);
+    this.onStateChange('clear', this);  // 通知 UI 显示过关界面（此前发 hud 导致无入口卡死）
   }
 
   updateCamera(){
@@ -2128,9 +2128,8 @@ class UI {
     const btn = s.querySelector('.primary-btn');
     if (type==='gameover') btn.addEventListener('click', ()=>this.showMenu());
     else btn.addEventListener('click', ()=>this.onRetry());
-    // 自动消失(clear)
+    // clear 界面常驻直至点击"继续下一关"（不自动移除按钮，避免无入口卡死）
     if (type==='clear'){
-      setTimeout(()=>{ if (s.parentNode===this.overlay) s.remove(); }, 1600);
       setTimeout(()=>{ document.getElementById('touch-controls').classList.remove('hidden'); }, 400);
     }
   }
@@ -2182,6 +2181,7 @@ function init(){
   game = new Game(renderer, input, sfx, (st)=>{
     if (st==='playing') ui.hideAll();
     else if (st==='gameover') ui.showResult('gameover', game);
+    else if (st==='clear') ui.showResult('clear', game);   // 过关：显示 COURSE CLEAR + 下一关按钮
     else if (st==='dying') { /* 死亡由后续显示 */ }
   });
   ui.mount();

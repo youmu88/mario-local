@@ -1,5 +1,5 @@
 /* ===== SUPER MARIO - 单文件构建版 (自动生成，避免 file:// 下 ES module CORS 黑屏) ===== */
-/* 来源: js/*.js (ES module) 合并去模块化，由 npm run build 重新生成 */
+/* 来源: js/*.js (ES module) 合并去模块化，由 npm run build 重新生成。v1.2 高精度精灵+手感+复活优化。 */
 ;(function(){
 "use strict";
 

@@ -47,7 +47,7 @@ class Enemy {
     if (type==='goomba'){}
     else { this.h=TILE+4; } // koopa 略高
     this.x=x; this.y=y-this.h;
-    this.vx = type==='goomba'? -0.9 : -0.7;
+    this.vx = type==='goomba'? -0.6 : -0.5;   // 敌人移动更慢
     this.vy=0;
     this.dir = this.vx<0?-1:1;
     this.alive=true;

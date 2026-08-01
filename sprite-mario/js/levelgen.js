@@ -59,9 +59,9 @@ export function generateLevel(levelNo, seedStr){
     let choice = r < 0.20 ? 'ground' : (r < 0.42 ? 'blocks' : (r < 0.64 ? 'pit' : (r < 0.82 ? 'pipe' : 'enemies')));
 
     if (choice === 'pit'){
-      // 坑
+      // 坑（宽度与新跳跃能力匹配：普通跳≈3格，冲刺大跳≈5格）
       if (x > 14 && x < w-20 && rng() < pitChance){
-        const pw = ri(3, 4+Math.floor(diff/2));
+        const pw = ri(2, 3+Math.floor(diff/3));  // 2~4格，确保能跳过去
         for (let px=0;px<pw;px++){
           for (let gy=0; gy<H; gy++) tiles[gy][x+px] = 0;
         }

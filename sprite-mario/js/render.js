@@ -37,6 +37,12 @@ export class Renderer {
 
     sky(ctx, camX);
     clouds(ctx, camX);
+    // 背景山(视差，慢速滚动)
+    hills(ctx, camX*0.35);
+    // 背景灌木(视差中速)
+    bushes(ctx, camX*0.6);
+    // 地面草皮纹理(远层装饰随相机滚动)
+    groundDecor(ctx, camX);
 
     // 地块
     const vx0 = Math.max(0, Math.floor(camX/TILE));
@@ -175,5 +181,53 @@ function clouds(ctx,camX){
     const r=((i*260 - camX*0.25)%1400+1400)%1400-120, y=40+(i%3)*42;
     ctx.beginPath();
     ctx.arc(r,y,16,0,7);ctx.arc(r+18,y-6,20,0,7);ctx.arc(r+38,y,16,0,7);ctx.fill();
+  }
+}
+
+// 背景山（视差慢速滚动，立体青绿色）
+function hills(ctx,off){
+  for(let i=0;i<5;i++){
+    const hx=((i*300 - off)%1600+1600)%1600-160;
+    const hh=70+(i%3)*28;
+    ctx.fillStyle = i%2 ? '#3fae5a' : '#2f9a4a';
+    ctx.beginPath();
+    ctx.moveTo(hx, 328);
+    ctx.quadraticCurveTo(hx+60, 328-hh, hx+120, 328);
+    ctx.closePath(); ctx.fill();
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.moveTo(hx+22, 328);
+    ctx.quadraticCurveTo(hx+52, 328-hh*0.55, hx+88, 328);
+    ctx.closePath(); ctx.fill();
+  }
+}
+
+// 背景灌木（视差中速，半透明绿丛）
+function bushes(ctx,off){
+  for(let i=0;i<6;i++){
+    const bx=((i*220 - off)%1320+1320)%1320-120;
+    const by=300-((i%3)*6);
+    ctx.fillStyle='rgba(70,160,60,0.55)';
+    ctx.beginPath();
+    ctx.arc(bx,by,14,0,7);ctx.arc(bx+16,by-6,16,0,7);ctx.arc(bx+34,by,14,0,7);
+    ctx.fill();
+  }
+}
+
+// 地面装饰（草皮/小石子，随相机滚动）
+function groundDecor(ctx,camX){
+  const gy=328;
+  ctx.fillStyle='#7ed957';
+  for(let i=0;i<10;i++){
+    const gx=((i*90 - camX)%1000+1000)%1000-80;
+    ctx.fillRect(gx,gy+2,8,3);
+    ctx.fillRect(gx+3,gy-2,3,6);
+  }
+  ctx.fillStyle='#9a6a2a';
+  for(let i=0;i<6;i++){
+    const gx=((i*160 - camX)%1200+1200)%1200-80;
+    ctx.fillRect(gx,gy+10,4,3);
+    ctx.fillRect(gx+6,gy+16,5,3);
   }
 }

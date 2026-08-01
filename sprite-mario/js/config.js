@@ -7,10 +7,12 @@ const CFG = {
   TILE: 32,
   GRAVITY: 0.55,        // 重力
   MAX_FALL: 14,
-  RUN_SPEED: 2.0,       // 基础跑速（经典手感，下调避免过快）
-  DASH_SPEED: 3.4,      // 冲刺
-  JUMP_VEL: -9.5,
-  DASH_JUMP_VEL: -11.5, // 冲刺大跳
+  RUN_SPEED: 1.8,       // 基础跑速（更慢，经典手感）
+  DASH_SPEED: 3.0,      // 冲刺
+  JUMP_VEL: -11.0,      // 跳跃初速（更高，跳得更远）
+  DASH_JUMP_VEL: -13.0, // 冲刺大跳
+  JUMP_HOLD_GRAV: 0.22, // 长按跳跃时的上升重力（越小跳得越高/越远，可变跳高）
+  NORMAL_GRAV: 0.42,    // 常态重力（松开跳或下落时）
   // 时间限制(秒)
   TIME_LIMIT: 300,
 };

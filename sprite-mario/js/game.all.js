@@ -1,5 +1,5 @@
 /* ===== SUPER MARIO - 单文件构建版 (自动生成，避免 file:// 下 ES module CORS 黑屏) ===== */
-/* 来源: js/*.js (ES module) 合并去模块化，由 npm run build 重新生成。v1.2 高精度精灵+手感+复活优化。 */
+/* 来源: js/*.js (ES module) 合并去模块化，由 npm run build 重新生成 */
 ;(function(){
 "use strict";
 
@@ -13,10 +13,12 @@ const CFG = {
   TILE: 32,
   GRAVITY: 0.55,        // 重力
   MAX_FALL: 14,
-  RUN_SPEED: 2.0,       // 基础跑速（经典手感，下调避免过快）
-  DASH_SPEED: 3.4,      // 冲刺
-  JUMP_VEL: -9.5,
-  DASH_JUMP_VEL: -11.5, // 冲刺大跳
+  RUN_SPEED: 1.8,       // 基础跑速（更慢，经典手感）
+  DASH_SPEED: 3.0,      // 冲刺
+  JUMP_VEL: -11.0,      // 跳跃初速（更高，跳得更远）
+  DASH_JUMP_VEL: -13.0, // 冲刺大跳
+  JUMP_HOLD_GRAV: 0.22, // 长按跳跃时的上升重力（越小跳得越高/越远，可变跳高）
+  NORMAL_GRAV: 0.42,    // 常态重力（松开跳或下落时）
   // 时间限制(秒)
   TIME_LIMIT: 300,
 };
@@ -535,9 +537,9 @@ function generateLevel(levelNo, seedStr){
     let choice = r < 0.20 ? 'ground' : (r < 0.42 ? 'blocks' : (r < 0.64 ? 'pit' : (r < 0.82 ? 'pipe' : 'enemies')));
 
     if (choice === 'pit'){
-      // 坑
+      // 坑（宽度与新跳跃能力匹配：普通跳≈3格，冲刺大跳≈5格）
       if (x > 14 && x < w-20 && rng() < pitChance){
-        const pw = ri(3, 4+Math.floor(diff/2));
+        const pw = ri(2, 3+Math.floor(diff/3));  // 2~4格，确保能跳过去
         for (let px=0;px<pw;px++){
           for (let gy=0; gy<H; gy++) tiles[gy][x+px] = 0;
         }
@@ -696,7 +698,7 @@ class Enemy {
     if (type==='goomba'){}
     else { this.h=TILE+4; } // koopa 略高
     this.x=x; this.y=y-this.h;
-    this.vx = type==='goomba'? -0.9 : -0.7;
+    this.vx = type==='goomba'? -0.6 : -0.5;   // 敌人移动更慢
     this.vy=0;
     this.dir = this.vx<0?-1:1;
     this.alive=true;
@@ -900,18 +902,22 @@ class Player {
     else this.vx=0;
     this.running = input.keys.run && (input.keys.left||input.keys.right);
 
-    // 跳跃缓冲 + 蓄力
+    // 跳跃缓冲 + 蓄力(长按跳更高更远)
     if (input.consumeJump()){
       if (this.onGround){
         this.vy = this.running? CFG_.DASH_JUMP_VEL : CFG_.JUMP_VEL;
         this.onGround=false;
+        this.jumpHeld = true;
         sfx.jump();
       } else {
         // 空中再跳(经典马里奥不能二段跳，忽略)
       }
     }
-    // 长按跳更高(可变跳)
-    // if (!input.keys.jump && this.vy < -3) { this.vy = -3; }
+    // 松开跳跃：立即截断上升(短按跳得低)，长按则保持低重力升空
+    if (!input.keys.jump){
+      this.jumpHeld = false;
+      if (this.vy < -3) this.vy = -3;   // 快速结束上升，实现可变跳高
+    }
 
     // 开火
     if (input.consumeFire() && this.fire){
@@ -922,8 +928,9 @@ class Player {
       }
     }
 
-    // 物理
-    this.vy = Math.min(this.vy + CFG_.GRAVITY, CFG_.MAX_FALL);
+    // 物理：上升中按住跳用低重力(长按大跳)，否则常态重力
+    const g = (this.vy < 0 && this.jumpHeld) ? CFG_.JUMP_HOLD_GRAV : CFG_.NORMAL_GRAV;
+    this.vy = Math.min(this.vy + g, CFG_.MAX_FALL);
 
     // 水平碰撞(推回 + 触碰块)
     const prevOnGround = this.onGround;
@@ -1014,6 +1021,12 @@ class Renderer {
 
     sky(ctx, camX);
     clouds(ctx, camX);
+    // 背景山(视差，慢速滚动)
+    hills(ctx, camX*0.35);
+    // 背景灌木(视差中速)
+    bushes(ctx, camX*0.6);
+    // 地面草皮纹理(远层装饰随相机滚动)
+    groundDecor(ctx, camX);
 
     // 地块
     const vx0 = Math.max(0, Math.floor(camX/TILE));
@@ -1152,6 +1165,54 @@ function clouds(ctx,camX){
     const r=((i*260 - camX*0.25)%1400+1400)%1400-120, y=40+(i%3)*42;
     ctx.beginPath();
     ctx.arc(r,y,16,0,7);ctx.arc(r+18,y-6,20,0,7);ctx.arc(r+38,y,16,0,7);ctx.fill();
+  }
+}
+
+// 背景山（视差慢速滚动，立体青绿色）
+function hills(ctx,off){
+  for(let i=0;i<5;i++){
+    const hx=((i*300 - off)%1600+1600)%1600-160;
+    const hh=70+(i%3)*28;
+    ctx.fillStyle = i%2 ? '#3fae5a' : '#2f9a4a';
+    ctx.beginPath();
+    ctx.moveTo(hx, 328);
+    ctx.quadraticCurveTo(hx+60, 328-hh, hx+120, 328);
+    ctx.closePath(); ctx.fill();
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.moveTo(hx+22, 328);
+    ctx.quadraticCurveTo(hx+52, 328-hh*0.55, hx+88, 328);
+    ctx.closePath(); ctx.fill();
+  }
+}
+
+// 背景灌木（视差中速，半透明绿丛）
+function bushes(ctx,off){
+  for(let i=0;i<6;i++){
+    const bx=((i*220 - off)%1320+1320)%1320-120;
+    const by=300-((i%3)*6);
+    ctx.fillStyle='rgba(70,160,60,0.55)';
+    ctx.beginPath();
+    ctx.arc(bx,by,14,0,7);ctx.arc(bx+16,by-6,16,0,7);ctx.arc(bx+34,by,14,0,7);
+    ctx.fill();
+  }
+}
+
+// 地面装饰（草皮/小石子，随相机滚动）
+function groundDecor(ctx,camX){
+  const gy=328;
+  ctx.fillStyle='#7ed957';
+  for(let i=0;i<10;i++){
+    const gx=((i*90 - camX)%1000+1000)%1000-80;
+    ctx.fillRect(gx,gy+2,8,3);
+    ctx.fillRect(gx+3,gy-2,3,6);
+  }
+  ctx.fillStyle='#9a6a2a';
+  for(let i=0;i<6;i++){
+    const gx=((i*160 - camX)%1200+1200)%1200-80;
+    ctx.fillRect(gx,gy+10,4,3);
+    ctx.fillRect(gx+6,gy+16,5,3);
   }
 }
 

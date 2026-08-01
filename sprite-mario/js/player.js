@@ -62,18 +62,22 @@ export class Player {
     else this.vx=0;
     this.running = input.keys.run && (input.keys.left||input.keys.right);
 
-    // 跳跃缓冲 + 蓄力
+    // 跳跃缓冲 + 蓄力(长按跳更高更远)
     if (input.consumeJump()){
       if (this.onGround){
         this.vy = this.running? CFG_.DASH_JUMP_VEL : CFG_.JUMP_VEL;
         this.onGround=false;
+        this.jumpHeld = true;
         sfx.jump();
       } else {
         // 空中再跳(经典马里奥不能二段跳，忽略)
       }
     }
-    // 长按跳更高(可变跳)
-    // if (!input.keys.jump && this.vy < -3) { this.vy = -3; }
+    // 松开跳跃：立即截断上升(短按跳得低)，长按则保持低重力升空
+    if (!input.keys.jump){
+      this.jumpHeld = false;
+      if (this.vy < -3) this.vy = -3;   // 快速结束上升，实现可变跳高
+    }
 
     // 开火
     if (input.consumeFire() && this.fire){
@@ -84,8 +88,9 @@ export class Player {
       }
     }
 
-    // 物理
-    this.vy = Math.min(this.vy + CFG_.GRAVITY, CFG_.MAX_FALL);
+    // 物理：上升中按住跳用低重力(长按大跳)，否则常态重力
+    const g = (this.vy < 0 && this.jumpHeld) ? CFG_.JUMP_HOLD_GRAV : CFG_.NORMAL_GRAV;
+    this.vy = Math.min(this.vy + g, CFG_.MAX_FALL);
 
     // 水平碰撞(推回 + 触碰块)
     const prevOnGround = this.onGround;

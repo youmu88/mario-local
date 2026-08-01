@@ -1,0 +1,108 @@
+/* ===== 全屏布局 ===== */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body,#app { width:100%; height:100%; overflow:hidden; }
+body {
+  background:#000;
+  font-family:'Press Start 2P', 'Courier New', monospace, sans-serif;
+  user-select:none;
+  touch-action:none;
+}
+#app { position:relative; }
+
+canvas#game {
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  display:block;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+
+/* ===== 触屏控件 ===== */
+#touch-controls {
+  position:absolute; bottom:0; left:0; right:0;
+  height:140px; z-index:20;
+  display:flex; justify-content:space-between; align-items:flex-end;
+  padding:0 12px 16px;
+  pointer-events:none;
+}
+#touch-controls.hidden { display:none; }
+#dpad, #action-btns { display:flex; gap:10px; pointer-events:none; }
+.tbtn {
+  pointer-events:auto;
+  width:64px; height:64px;
+  border-radius:50%;
+  border:2px solid rgba(255,255,255,.6);
+  background:rgba(255,255,255,.18);
+  color:#fff; font-size:26px; font-weight:bold;
+  display:flex; align-items:center; justify-content:center;
+  touch-action:none;
+}
+.tbtn:active { background:rgba(255,255,255,.5); }
+#btn-jump { width:76px; height:76px; }
+#btn-fire { background:rgba(255,60,60,.4); }
+
+/* ===== 覆盖层 UI ===== */
+#overlay {
+  position:absolute; inset:0; z-index:50;
+  pointer-events:none;
+}
+#overlay > * { pointer-events:auto; }
+.hidden { display:none !important; }
+
+.screen {
+  position:absolute; inset:0;
+  background:rgba(0,0,0,.82);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  color:#fff; text-align:center;
+}
+.screen .title {
+  font-size:40px; letter-spacing:4px;
+  color:#ffd800; text-shadow:3px 3px 0 #b4520a, 6px 6px 0 rgba(0,0,0,.4);
+  margin-bottom:6px;
+}
+.screen .subtitle { font-size:14px; color:#aad3ff; margin-bottom:26px; }
+
+.config-box {
+  width:min(620px, 92%);
+  background:#101828; border-radius:16px; border:2px solid #5c94fc;
+  padding:20px 24px; text-align:left;
+}
+.config-row { display:flex; align-items:center; justify-content:space-between; padding:10px 4px; border-bottom:1px dashed #2a3d5c; }
+.config-row:last-child { border-bottom:none; }
+.config-label { font-size:13px; color:#cfe6ff; }
+.config-label small { display:block; color:#7f9cc0; margin-top:3px; font-size:11px; }
+.seg { display:flex; gap:6px; }
+.seg-btn {
+  padding:8px 16px; border-radius:8px; border:1px solid #3a5590;
+  background:#1a2740; color:#bccfea; font-size:12px; cursor:pointer;
+}
+.seg-btn.active { background:#5c94fc; color:#fff; border-color:#8fc0ff; }
+
+.primary-btn {
+  margin-top:24px; padding:14px 52px; font-size:16px;
+  background:#ffb400; color:#4a2a00; border:none; border-radius:10px;
+  font-weight:bold; cursor:pointer; box-shadow:0 4px 0 #9c6a00;
+}
+.primary-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #9c6a00; }
+.primary-btn.red { background:#ff4030; color:#fff; box-shadow:0 4px 0 #a02020; }
+
+.hud {
+  position:absolute; top:0; left:0; right:0; z-index:10;
+  display:flex; justify-content:space-between;
+  padding:10px 16px; color:#fff;
+  text-shadow:2px 2px 0 rgba(0,0,0,.6);
+  background:linear-gradient(rgba(0,0,0,.45), transparent);
+  font-size:13px;
+}
+.hud span { margin-right:16px; }
+.hud .lives i, .hud .coin i { font-style:normal; color:#ffd800; }
+
+.status-line { font-size:13px; color:#ffe14d; margin-top:6px; min-height:20px; }
+.loading, .toast { font-size:14px; color:#9fe8a0; margin-top:10px; }
+
+/* 移动端调整 */
+@media (max-width:700px){
+  .screen .title { font-size:30px; }
+  .hud { font-size:11px; }
+}

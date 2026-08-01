@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#5c94fc"/>
+  <!-- 问号砖块 -->
+  <rect x="96" y="96" width="320" height="320" rx="40" fill="#c96a12" stroke="#8a3d00" stroke-width="20"/>
+  <rect x="116" y="116" width="120" height="120" rx="24" fill="#e8a03c"/>
+  <rect x="276" y="116" width="120" height="120" rx="24" fill="#e8a03c"/>
+  <rect x="116" y="276" width="120" height="120" rx="24" fill="#e8a03c"/>
+  <rect x="276" y="276" width="120" height="120" rx="24" fill="#e8a03c"/>
+  <!-- 马里奥红帽 -->
+  <path d="M256 96c70 0 120 44 120 96h40c8-56-60-96-120-96s-128 40-120 96h40c0-52 10-96 40-96z" fill="#e03a20"/>
+  <circle cx="256" cy="192" r="60" fill="#f7c5a0"/>
+</svg>

@@ -108,7 +108,16 @@ export class Game {
     const w = this.world, p = this.player;
     if (!p.alive || this.state!=='playing') return;
     const pa = {x:p.x,y:p.y,w:p.w,h:p.h};
-    const inv = p.starT>0 || p.hurtFlashT>0 || p.respawnInvT>0;  // 无敌(星星/受伤闪烁/复活保护)
+    // 金币满 100 加 1 命（原版规则：100 coins = 1UP）
+    if (p.coins >= 100){
+      p.coins -= 100;
+      this.lives++;
+      this.addScore(1000);
+      this.sfx.oneup();
+      this.onStateChange('hud', this);
+    }
+    const star = p.starT>0;                                      // 无敌星星：碰到敌人直接消灭（原版行为）
+    const inv = star || p.hurtFlashT>0 || p.respawnInvT>0;       // 免伤(星星/受伤闪烁/复活保护)
     // 与道具
     for (const pu of w.powerups){
       if (!pu.alive) continue;
@@ -122,6 +131,11 @@ export class Game {
       if (!e.alive || e.dead) continue;
       const ebox = e.type==='piranha' ? e.box : {x:e.x,y:e.y,w:e.w,h:e.h};
       if (!aabb(pa, ebox)) continue;
+      if (star){  // 无敌星星：碰到即消灭敌人（含食人花，得 200 分）
+        e.dead=true; e.deadT=20; e.vx=0;
+        this.addScore(e.type==='piranha' ? 200 : 100); this.sfx.stomp();
+        continue;
+      }
       const stomping = p.vy>0 && (p.y + p.h - e.y) < 16;
       if (stomping){
         // 可踩：goomba/koopa/flyer；不可踩：piranha(花)/spiny(尖刺，踩踏受伤)
@@ -159,7 +173,7 @@ export class Game {
         const ebox = e.type==='piranha' ? e.box : {x:e.x,y:e.y,w:e.w,h:e.h};
         if (aabb(b, ebox) && this.killEnemyByBullet(b)){
           e.dead=true; e.deadT=20; e.vx=0;
-          this.addScore(100);
+          this.addScore(e.type==='piranha' ? 200 : 100);   // 食人花 200 分（原版）
           this.sfx.stomp();
           break;
         }

@@ -7,8 +7,12 @@ const CFG = {
   TILE: 32,
   GRAVITY: 0.55,        // 重力
   MAX_FALL: 14,
-  RUN_SPEED: 1.8,       // 基础跑速（更慢，经典手感）
-  DASH_SPEED: 3.0,      // 冲刺
+  RUN_SPEED: 1.6,       // 基础跑速（渐进加速，经典手感）
+  DASH_SPEED: 2.6,      // 冲刺
+  WALK_ACCEL: 0.10,     // 地面加速度（渐进起步，操作更可控）
+  AIR_ACCEL: 0.055,     // 空中加速度（空中转向弱，还原原版）
+  FRICTION: 0.15,       // 松开方向键的减速（轻微滑行）
+  TURN_DECEL: 0.20,     // 反向变道减速（快速换向但平滑）
   JUMP_VEL: -11.0,      // 跳跃初速（更高，跳得更远）
   DASH_JUMP_VEL: -13.0, // 冲刺大跳
   JUMP_HOLD_GRAV: 0.22, // 长按跳跃时的上升重力（越小跳得越高/越远，可变跳高）

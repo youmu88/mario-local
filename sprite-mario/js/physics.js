@@ -40,13 +40,14 @@ export function moveY(body, tiles, hits) {
   const hitCells = [];
 
   if (body.vy >= 0) {
-    // 下落
-    const row = Math.floor((body.y + body.h) / tile);
+    // 下落（+0.001 epsilon：贴地后 y+h≈r*tile 也能被检测到，避免站立 y 振荡嵌入地面
+    // 导致 moveX 误检地面行把玩家推回——这是“某些地方卡住”的根因）
+    const row = Math.floor((body.y + body.h + 0.001) / tile);
     const nrow = Math.floor((body.y + body.h + body.vy) / tile);
     for (let r = row; r <= nrow; r++){
       for (let x = xs; x <= xe; x++){
         if (tiles[r] && tiles[r][x]) {
-          body.y = r * tile - body.h - 0.01;
+          body.y = r * tile - body.h;   // 精确贴地（消除 -0.01 振荡）
           body.vy = 0;
           grounded = true;
           hitCells.push([x, r]);
@@ -55,8 +56,8 @@ export function moveY(body, tiles, hits) {
       }
     }
   } else {
-    // 上升
-    const row = Math.floor(body.y / tile);
+    // 上升（-0.001 epsilon：贴顶后 y=(r+1)*tile+0.01 时判定已脱离，不误撞）
+    const row = Math.floor((body.y - 0.001) / tile);
     const nrow = Math.floor((body.y + body.vy) / tile);
     for (let r = row; r >= nrow; r--){
       for (let x = xs; x <= xe; x++){

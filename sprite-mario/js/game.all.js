@@ -13,8 +13,12 @@ const CFG = {
   TILE: 32,
   GRAVITY: 0.55,        // 重力
   MAX_FALL: 14,
-  RUN_SPEED: 1.8,       // 基础跑速（更慢，经典手感）
-  DASH_SPEED: 3.0,      // 冲刺
+  RUN_SPEED: 1.6,       // 基础跑速（渐进加速，经典手感）
+  DASH_SPEED: 2.6,      // 冲刺
+  WALK_ACCEL: 0.10,     // 地面加速度（渐进起步，操作更可控）
+  AIR_ACCEL: 0.055,     // 空中加速度（空中转向弱，还原原版）
+  FRICTION: 0.15,       // 松开方向键的减速（轻微滑行）
+  TURN_DECEL: 0.20,     // 反向变道减速（快速换向但平滑）
   JUMP_VEL: -11.0,      // 跳跃初速（更高，跳得更远）
   DASH_JUMP_VEL: -13.0, // 冲刺大跳
   JUMP_HOLD_GRAV: 0.22, // 长按跳跃时的上升重力（越小跳得越高/越远，可变跳高）
@@ -752,13 +756,14 @@ function moveY(body, tiles, hits) {
   const hitCells = [];
 
   if (body.vy >= 0) {
-    // 下落
-    const row = Math.floor((body.y + body.h) / tile);
+    // 下落（+0.001 epsilon：贴地后 y+h≈r*tile 也能被检测到，避免站立 y 振荡嵌入地面
+    // 导致 moveX 误检地面行把玩家推回——这是“某些地方卡住”的根因）
+    const row = Math.floor((body.y + body.h + 0.001) / tile);
     const nrow = Math.floor((body.y + body.h + body.vy) / tile);
     for (let r = row; r <= nrow; r++){
       for (let x = xs; x <= xe; x++){
         if (tiles[r] && tiles[r][x]) {
-          body.y = r * tile - body.h - 0.01;
+          body.y = r * tile - body.h;   // 精确贴地（消除 -0.01 振荡）
           body.vy = 0;
           grounded = true;
           hitCells.push([x, r]);
@@ -767,8 +772,8 @@ function moveY(body, tiles, hits) {
       }
     }
   } else {
-    // 上升
-    const row = Math.floor(body.y / tile);
+    // 上升（-0.001 epsilon：贴顶后 y=(r+1)*tile+0.01 时判定已脱离，不误撞）
+    const row = Math.floor((body.y - 0.001) / tile);
     const nrow = Math.floor((body.y + body.vy) / tile);
     for (let r = row; r >= nrow; r--){
       for (let x = xs; x <= xe; x++){
@@ -949,8 +954,8 @@ function generateLevel(levelNo, seedStr){
       if (rng()<0.5){
         spawns.push({x:x, y:tileY-(ph-1), type:'piranha'});
       }
-      // 管道口跳上来有宝
-      if (rng()<0.5) pushBlock(x, '?', 'mushroom');
+      // 原版 SMB 管道旁不放宝箱：既避免大马里奥站管道顶被正上方问号块挡头卡住，
+      // 也避免宝箱落到相邻管道段落正上方形成残留块
       x += 2 + ri(1,3);
     }
     else { // enemies
@@ -1141,10 +1146,11 @@ class Piranha {
     this.walkT=0; this.frame=0;
   }
   // 碰撞盒：花头（仅伸出明显时有效；未伸出则无碰撞）
+  // 高度不超过花头(TILE)且底部≤管道口顶面：玩家站管道顶不会受伤（原版行为）
   get box(){
     const out = this.pipeTopY - this.y;   // 当前伸出量
-    if (out < 10) return { x:this.x, y:this.y, w:0, h:0 };
-    return { x:this.x+2, y:this.y, w:this.w-4, h:Math.min(out+10, 42) };
+    if (out < 8) return { x:this.x, y:this.y, w:0, h:0 };
+    return { x:this.x+2, y:this.y, w:this.w-4, h:Math.min(out, TILE) };
   }
   update(world){
     this.walkT++;
@@ -1188,6 +1194,8 @@ class Bullet {
     this.vy+=0.6; this.x+=this.vx; this.y+=this.vy;
     const gy = world.groundY*TILE-22;
     if (this.vy>0 && this.y>=gy){ this.y=gy; this.vy=-4; } // 弹跳
+    // 撞实心块（砖/问号/硬块，地面除外）→ 消散（原版火球撞墙消失，不穿墙）
+    if (world.solidAt(this.x, this.y, this.w, this.h)){ this.alive=false; }
     // 出界(屏幕外较远处 或 掉出世界底部)
     if (this.x < -60 || this.x > world.w*TILE+60 || this.y > world.h*TILE+60) this.alive=false;
   }
@@ -1360,12 +1368,23 @@ class Player {
       return;
     }
 
-    // 冲刺/跑
+    // 冲刺/跑（渐进加速/减速：还原经典手感，消除“瞬间满速”导致的操作失误）
     const max = input.keys.run ? CFG_.DASH_SPEED : CFG_.RUN_SPEED;
-    if (input.keys.left){ this.vx = -max; this.dir=-1; }
-    else if (input.keys.right){ this.vx = max; this.dir=1; }
-    else this.vx=0;
-    this.running = input.keys.run && (input.keys.left||input.keys.right);
+    const wantDir = input.keys.left ? -1 : (input.keys.right ? 1 : 0);
+    let accel;
+    if (wantDir === 0){ accel = CFG_.FRICTION; }
+    else if (this.vx * wantDir < 0){ accel = CFG_.TURN_DECEL; }  // 反向变道：快速但平滑换向
+    else { accel = this.onGround ? CFG_.WALK_ACCEL : CFG_.AIR_ACCEL; }
+    this.vx += wantDir * accel;
+    if (wantDir > 0) this.vx = Math.min(this.vx, max);
+    else if (wantDir < 0) this.vx = Math.max(this.vx, -max);
+    else {
+      // 松开方向键：按摩擦减速（轻微滑行，最终完全停下）
+      if (this.vx > 0) this.vx = Math.max(0, this.vx - accel);
+      else if (this.vx < 0) this.vx = Math.min(0, this.vx + accel);
+    }
+    if (wantDir !== 0) this.dir = wantDir;
+    this.running = input.keys.run && wantDir !== 0 && Math.abs(this.vx) > 0.5;
 
     // 跳跃缓冲 + 蓄力(长按跳更高更远)
     if (input.consumeJump()){
@@ -1995,7 +2014,16 @@ class Game {
     const w = this.world, p = this.player;
     if (!p.alive || this.state!=='playing') return;
     const pa = {x:p.x,y:p.y,w:p.w,h:p.h};
-    const inv = p.starT>0 || p.hurtFlashT>0 || p.respawnInvT>0;  // 无敌(星星/受伤闪烁/复活保护)
+    // 金币满 100 加 1 命（原版规则：100 coins = 1UP）
+    if (p.coins >= 100){
+      p.coins -= 100;
+      this.lives++;
+      this.addScore(1000);
+      this.sfx.oneup();
+      this.onStateChange('hud', this);
+    }
+    const star = p.starT>0;                                      // 无敌星星：碰到敌人直接消灭（原版行为）
+    const inv = star || p.hurtFlashT>0 || p.respawnInvT>0;       // 免伤(星星/受伤闪烁/复活保护)
     // 与道具
     for (const pu of w.powerups){
       if (!pu.alive) continue;
@@ -2009,6 +2037,11 @@ class Game {
       if (!e.alive || e.dead) continue;
       const ebox = e.type==='piranha' ? e.box : {x:e.x,y:e.y,w:e.w,h:e.h};
       if (!aabb(pa, ebox)) continue;
+      if (star){  // 无敌星星：碰到即消灭敌人（含食人花，得 200 分）
+        e.dead=true; e.deadT=20; e.vx=0;
+        this.addScore(e.type==='piranha' ? 200 : 100); this.sfx.stomp();
+        continue;
+      }
       const stomping = p.vy>0 && (p.y + p.h - e.y) < 16;
       if (stomping){
         // 可踩：goomba/koopa/flyer；不可踩：piranha(花)/spiny(尖刺，踩踏受伤)
@@ -2046,7 +2079,7 @@ class Game {
         const ebox = e.type==='piranha' ? e.box : {x:e.x,y:e.y,w:e.w,h:e.h};
         if (aabb(b, ebox) && this.killEnemyByBullet(b)){
           e.dead=true; e.deadT=20; e.vx=0;
-          this.addScore(100);
+          this.addScore(e.type==='piranha' ? 200 : 100);   // 食人花 200 分（原版）
           this.sfx.stomp();
           break;
         }

@@ -1,6 +1,6 @@
 {
   "name": "super-mario",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "超级马里奥闯关游戏 - 多文件源码 + 单文件构建版",
   "private": true,
   "scripts": {

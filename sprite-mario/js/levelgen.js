@@ -161,8 +161,8 @@ export function generateLevel(levelNo, seedStr){
       if (rng()<0.5){
         spawns.push({x:x, y:tileY-(ph-1), type:'piranha'});
       }
-      // 管道口跳上来有宝
-      if (rng()<0.5) pushBlock(x, '?', 'mushroom');
+      // 原版 SMB 管道旁不放宝箱：既避免大马里奥站管道顶被正上方问号块挡头卡住，
+      // 也避免宝箱落到相邻管道段落正上方形成残留块
       x += 2 + ri(1,3);
     }
     else { // enemies

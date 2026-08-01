@@ -132,10 +132,11 @@ export class Piranha {
     this.walkT=0; this.frame=0;
   }
   // 碰撞盒：花头（仅伸出明显时有效；未伸出则无碰撞）
+  // 高度不超过花头(TILE)且底部≤管道口顶面：玩家站管道顶不会受伤（原版行为）
   get box(){
     const out = this.pipeTopY - this.y;   // 当前伸出量
-    if (out < 10) return { x:this.x, y:this.y, w:0, h:0 };
-    return { x:this.x+2, y:this.y, w:this.w-4, h:Math.min(out+10, 42) };
+    if (out < 8) return { x:this.x, y:this.y, w:0, h:0 };
+    return { x:this.x+2, y:this.y, w:this.w-4, h:Math.min(out, TILE) };
   }
   update(world){
     this.walkT++;
@@ -179,6 +180,8 @@ export class Bullet {
     this.vy+=0.6; this.x+=this.vx; this.y+=this.vy;
     const gy = world.groundY*TILE-22;
     if (this.vy>0 && this.y>=gy){ this.y=gy; this.vy=-4; } // 弹跳
+    // 撞实心块（砖/问号/硬块，地面除外）→ 消散（原版火球撞墙消失，不穿墙）
+    if (world.solidAt(this.x, this.y, this.w, this.h)){ this.alive=false; }
     // 出界(屏幕外较远处 或 掉出世界底部)
     if (this.x < -60 || this.x > world.w*TILE+60 || this.y > world.h*TILE+60) this.alive=false;
   }

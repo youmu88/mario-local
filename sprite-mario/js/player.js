@@ -76,12 +76,23 @@ export class Player {
       return;
     }
 
-    // 冲刺/跑
+    // 冲刺/跑（渐进加速/减速：还原经典手感，消除“瞬间满速”导致的操作失误）
     const max = input.keys.run ? CFG_.DASH_SPEED : CFG_.RUN_SPEED;
-    if (input.keys.left){ this.vx = -max; this.dir=-1; }
-    else if (input.keys.right){ this.vx = max; this.dir=1; }
-    else this.vx=0;
-    this.running = input.keys.run && (input.keys.left||input.keys.right);
+    const wantDir = input.keys.left ? -1 : (input.keys.right ? 1 : 0);
+    let accel;
+    if (wantDir === 0){ accel = CFG_.FRICTION; }
+    else if (this.vx * wantDir < 0){ accel = CFG_.TURN_DECEL; }  // 反向变道：快速但平滑换向
+    else { accel = this.onGround ? CFG_.WALK_ACCEL : CFG_.AIR_ACCEL; }
+    this.vx += wantDir * accel;
+    if (wantDir > 0) this.vx = Math.min(this.vx, max);
+    else if (wantDir < 0) this.vx = Math.max(this.vx, -max);
+    else {
+      // 松开方向键：按摩擦减速（轻微滑行，最终完全停下）
+      if (this.vx > 0) this.vx = Math.max(0, this.vx - accel);
+      else if (this.vx < 0) this.vx = Math.min(0, this.vx + accel);
+    }
+    if (wantDir !== 0) this.dir = wantDir;
+    this.running = input.keys.run && wantDir !== 0 && Math.abs(this.vx) > 0.5;
 
     // 跳跃缓冲 + 蓄力(长按跳更高更远)
     if (input.consumeJump()){

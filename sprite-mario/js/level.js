@@ -7,8 +7,9 @@ import { PowerUp, makeEnemy, Bullet } from './entities.js';
 export class World {
   constructor(levelNo, seed, startCfg){
     this.levelNo = levelNo;
-    // 生成地图
-    const gen = generateLevel(levelNo, seed);
+    // 生成地图（seed 固定后同一关卡可复现）
+    this.seed = seed || ('level'+levelNo);
+    const gen = generateLevel(levelNo, this.seed);
     this.w = gen.w; this.h = gen.h;
     this.tiles = gen.tiles;
     this.groundY = gen.groundY;

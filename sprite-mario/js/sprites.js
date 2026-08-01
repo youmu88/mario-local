@@ -1,5 +1,6 @@
-/* ===== 程序化像素精灵绘制 =====
- * 用 8x8/16x16 网格点阵描述精灵，运行时在离屏 canvas 上渲染为高清纹理。
+/* ===== 程序化像素精灵绘制（高精度重绘版） =====
+ * 用字符画描述精灵，运行时在离屏 canvas 上渲染为高清纹理。
+ * PX 在 config.js 中定义（当前=4，更高分辨率）。
  */
 import { PX } from './config.js';
 
@@ -25,45 +26,219 @@ function makeSprite(rows, pal) {
   return c;
 }
 
+/* ===== 调色板（经典红白配色） ===== */
 const PAL = {
-  'R':'#e03a20','r':'#9c2a15',  // 红(帽/衣)
-  'B':'#2a8cd4','b':'#1a5c9c',  // 蓝(裤)
-  'S':'#f7c5a0','s':'#c98a62',  // 肤色
-  'H':'#5a320a','h':'#341c05',  // 棕头发
-  'K':'#2a1200',                // 眼睛黑
-  'Y':'#ffd800','y':'#c9a400',  // 黄(扣/星)
-  'W':'#fff','w':'#c0c0c0',     // 白
-  'G':'#b07730','g':'#7a4a18',  // 棕壳
-  'O':'#ff8c00',                // 橙
-  'N':'#111',                   // 壳深
-  'T':'#5aa02a','t':'#3a6a18',  // 乌龟绿
-  'M':'#7ce82a',                // 绿
-  'P':'#c96a12','p':'#8a3d00',  // 问号砖土色
-  'C':'#d0d0d0',                // 灰砖
-  'L':'#8fd14f',                // 蘑菇伞
-  'E':'#e8e8e8',                // 蘑菇柄
-  'F':'#ffb400',                // 火球
-  'Q':'#ff7040',                // 金币
-  'V':'#8a1a1a',                // 旗砖
+  'R':'#e03a20',  // 马里奥红(帽/上衣)
+  'r':'#9c2010',  // 深红(阴影)
+  'B':'#2050e0',  // 马里奥蓝(背带裤)
+  'b':'#1030a0',  // 深蓝阴影
+  'S':'#f8d0a8',  // 肤色
+  's':'#d8a070',  // 肤色阴影
+  'H':'#603010',  // 棕色(头发/胡子/鞋)
+  'h':'#381c05',  // 深棕
+  'K':'#1a0a00',  // 黑(眼睛)
+  'W':'#ffffff',  // 白(手套/眼睛高光)
+  'Y':'#ffd800',  // 黄(星/扣)
+  'y':'#c9a000',
+  'G':'#c07830',  // Goomba 板栗棕
+  'g':'#804818',  // 深棕
+  'T':'#50a028',  // Koopa 壳绿
+  't':'#286812',  // 深绿
+  'M':'#e83818',  // 蘑菇伞红
+  'm':'#a02008',
+  'E':'#f8f0e0',  // 蘑菇柄米白
+  'e':'#d0b890',
+  'F':'#ff8020',  // 火焰花橙
+  'O':'#ffa030',  // 火球亮橙
+  'o':'#d06000',  // 火球暗橙
+  'P':'#c96a12',  // 砖块土色
+  'p':'#8a3d00',
+  'Q':'#ffc020',  // 金币金
+  'q':'#d09000',
+  'C':'#e0e0e0',  // 砖灰
+  'c':'#a0a0a0',
+  'D':'#b8b8b8',  // 暗灰
+  'd':'#787878',
 };
-PAL.M = '#7ce82a';
 
-/* ===== 精灵定义 ===== */
 const SPRITES = {};
 
-// 问号砖
+/* ===== 小马里奥（面向右，经典红白配色） 16x20 ===== */
+SPRITES['mario_small'] = makeSprite([
+  '.....RRRRRRR.....',
+  '....RRRRRRRRRR...',
+  '....RRRRRRRRRRR..',
+  '....RRRRRRRRRRR..',
+  '....SSSSSSSSSSS..',
+  '....SSSSKSSSSK...',
+  '....SSSSSSSSSS...',
+  '.....SSSSSSSS....',
+  '....HHSSSSSSHH...',
+  '...HHHSSSSSSHHH..',
+  '...HHHHSSSSHHHH..',
+  '....HHHHHHHHH....',
+  '.....RRRRRRR.....',
+  '....RRRRRRRRR....',
+  '...RRBRRRRRBRR...',
+  '...RBBBRRRBBBR...',
+  '...RBBBBBBBBBR...',
+  '....BBBBBBBBB....',
+  '....BB.BBB.BB....',
+  '....BB.BBB.BB....',
+], PAL);
+
+/* ===== 大马里奥（面向右） 20x28 ===== */
+SPRITES['mario_big'] = makeSprite([
+  '......RRRRRRRR......',
+  '.....RRRRRRRRRR.....',
+  '....RRRRRRRRRRRR....',
+  '....RRRRRRRRRRRR....',
+  '....SSSSSSSSSSSS....',
+  '....SSSSSKSSSSK.....',
+  '....SSSSSSSSSSSS....',
+  '.....SSSSSSSSSS.....',
+  '....HHSSSSSSSSHH....',
+  '...HHHSSSSSSSSHHH...',
+  '...HHHHSSSSSSHHHH...',
+  '....HHHHHHHHHHHH....',
+  '.....RRRRRRRRRR.....',
+  '....RRRRRRRRRRRR....',
+  '....RRRRRRRRRRRR....',
+  '...RRRRRRRRRRRRRR...',
+  '...RRBBRRRRRRBBRR...',
+  '...RBBBBRRRRBBBBR...',
+  '...RBBBBBBBBBBBBR...',
+  '....BBBBBBBBBBBB....',
+  '....BBBB.BBBBBB.....',
+  '....BBBB.BBBBBB.....',
+  '....BBB...BBB.......',
+  '....BBB...BBB.......',
+  '....BB.....BB.......',
+  '....BB.....BB.......',
+  '....BBB...BBB.......',
+  '....BBB...BBB.......',
+], PAL);
+
+/* ===== 板栗仔 Goomba（面向右） 14x14 ===== */
+SPRITES['goomba'] = makeSprite([
+  '....GGGGGG....',
+  '...GGGGGGGG...',
+  '..GGGGGGGGGG..',
+  '..GGgGGGGgGG..',
+  '..GGGGGGGGGG..',
+  '..GGKGGGGKGG..',
+  '..GGGGGGGGGG..',
+  '.GGGGGGGGGGGG.',
+  '.GGGGGGGGGGGG.',
+  '.GGGGgGGgGGGG.',
+  '.GGGGGGGGGGGG.',
+  '..GGGGGGGGGG..',
+  '...ggGGGGgg...',
+  '....gggggg....',
+], PAL);
+
+/* ===== 乌龟 Koopa（面向右） 16x18 ===== */
+SPRITES['koopa'] = makeSprite([
+  '......TTTT......',
+  '.....TTTTTT.....',
+  '....TTTTTTTT....',
+  '....TTTTTTTT....',
+  '....TTsTTTTs....',
+  '....TTTTTTTT....',
+  '....TTTTTTTT....',
+  '.....TTTTTT.....',
+  '....TTTTTTTT....',
+  '...TTTTTTTTTT...',
+  '..TTTTTTTTTTTT..',
+  '..TTTTTTTTTTTT..',
+  '..TTsTTTTTTsTT..',
+  '..TTTTTTTTTTTT..',
+  '..TTTTTTTTTTTT..',
+  '...TTTTTTTTTT...',
+  '....TT....TT....',
+  '....TT....TT....',
+], PAL);
+
+/* ===== 蘑菇（红，变大道具） 16x16 ===== */
+SPRITES['mushroom'] = makeSprite([
+  '.....MMMMMM.....',
+  '....MMMMMMMM....',
+  '...MMMMMMMMMM...',
+  '..MMMMMMMMMMMM..',
+  '..MMMMMMMMMMMM..',
+  '.MMWWMMMMWWMMMM.',
+  '.MMWWMMMMWWMMMM.',
+  '.MMMMMMMMMMMMMM.',
+  '.MMMMMMMMMMMMMM.',
+  '.MMMMMMMMMMMMMM.',
+  '..MMMMMMMMMMMM..',
+  '...EEEEEEEEEE...',
+  '...EEEEEEEEEE...',
+  '...EEEEEEEEEE...',
+  '....EEEEEEEE....',
+  '....EEEEEEEE....',
+], PAL);
+
+/* ===== 火焰花（发子弹道具） 12x16 ===== */
+SPRITES['flower'] = makeSprite([
+  '.....FF.....',
+  '....FFFF....',
+  '...FFFFFF...',
+  '..FFFFFFFF..',
+  '..FFFFFFFF..',
+  '..FFKFFKFF..',
+  '..FFFFFFFF..',
+  '...FFFFFF...',
+  '....FFFF....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+], PAL);
+
+/* ===== 星星（无敌道具） 12x12 ===== */
+SPRITES['star'] = makeSprite([
+  '.....YY.....',
+  '....YYYY....',
+  '...YYYYYY...',
+  '..YYYYYYYY..',
+  '.YYYYYYYYYY.',
+  '.YYYYYYYYYY.',
+  '..YYYYYYYY..',
+  '...YYYYYY...',
+  '....YYYY....',
+  '....YWWY....',
+  '....YWWY....',
+  '.....WW.....',
+], PAL);
+
+/* ===== 子弹/火球 8x8 ===== */
+SPRITES['fireball'] = makeSprite([
+  '...OOO...',
+  '..OOOOO..',
+  '.OOYOYOO.',
+  '.OOOOOOO.',
+  '.OOYOYOO.',
+  '..OOOOO..',
+  '...OOO...',
+], PAL);
+
+/* ===== 问号砖 8x8 ===== */
 SPRITES['brick_q'] = makeSprite([
   'pppppppp',
   'pPPPPPPp',
-  'pPYYYYPP',
-  'pPYWYPPP',
-  'pPPPYYYY',
-  'pPPYWYPP',
-  'pYPPPPPP',
-  'pppppppp'
+  'pPQQQQPP',
+  'pPQWWQQP',
+  'pPPQQQQP',
+  'pPQWWQQP',
+  'pQQPPPPQ',
+  'pppppppp',
 ], PAL);
 
-// 已消耗问号砖
+/* ===== 已消耗问号砖 8x8 ===== */
 SPRITES['brick_q_used'] = makeSprite([
   'pppppppp',
   'pPPPPPPp',
@@ -72,224 +247,107 @@ SPRITES['brick_q_used'] = makeSprite([
   'pPPPPPPp',
   'pPPPPPPp',
   'pPPPPPPp',
-  'pppppppp'
+  'pppppppp',
 ], PAL);
 
-// 普通实心砖方块
+/* ===== 普通方块砖 8x8 ===== */
 SPRITES['block'] = makeSprite([
   'CCCCCCCC',
-  'CccccccC',
-  'CccccccC',
+  'CddddddC',
+  'CddddddC',
   'CCCCCCCC',
-  'CccccccC',
-  'CccccccC',
+  'CddddddC',
+  'CddddddC',
   'CCCCCCCC',
-  'ccccccCC'
+  'dddddddd',
 ], PAL);
 
-// 可撞碎砖(金币砖下面的实心)
+/* ===== 可撞碎砖 8x8 ===== */
 SPRITES['brick_b'] = makeSprite([
-  'CgGCgGCc',
-  'gG.CgGCg',
-  'CGgGCgGC',
-  'CgGCgGCg',
-  'gGCgGCgG',
-  'GgGCgGCg',
-  'CgGCgGCG',
-  'gGCgGCgG'
+  'CddCddCc',
+  'ddCCddCd',
+  'CddCCddC',
+  'ddCddCdd',
+  'CddCddCC',
+  'dCddCddC',
+  'CddCddCC',
+  'ddCddCdd',
 ], PAL);
 
-// 金币
+/* ===== 金币 8x8 ===== */
 SPRITES['coin'] = makeSprite([
   '..QQQQ..',
-  '.QYYYYQ.',
-  'QYQYYQYQ',
-  'QYQYYQYQ',
-  'QYQYYQYQ',
-  'QYQYYQYQ',
-  '.QYYYYQ.',
-  '..QQQQ..'
+  '.QQYYQQ.',
+  'QQYQQYQQ',
+  'QQYQQYQQ',
+  'QQYQQYQQ',
+  'QQYQQYQQ',
+  '.QQYYQQ.',
+  '..QQQQ..',
 ], PAL);
 
-/* 小马里奥 - 面向右 */
-const MARIO_SMALL = [
-  '.....RRR.',
-  '....RRRRR',
-  '...RRRRRR',
-  '..RRRRRRR',
-  '..SSSSSSS',
-  '..SSSKSKS',
-  '..SSSSSSS',
-  '.sSSSSSSs',
-  '.sss.sss.',
-  '...R...R.',
-  '...B...B.',
-  '..BB..BB.',
-  '..B....B.'
-];
-SPRITES['mario_small'] = makeSprite(MARIO_SMALL, PAL);
-
-/* 大马里奥 - 面向右 */
-const MARIO_BIG = [
-  '....RRRRR.',
-  '...RRRRRRR',
-  '...RRRRRRR',
-  '...SSSSSSS',
-  '..SSSSSSSS',
-  '..SSSSKSKS',
-  '...SSSSSSS',
-  '...sSSSss.',
-  '....sSSs..',
-  '.RRR..RRR.',
-  '.RRR..RRR.',
-  '.BBB..BBB.',
-  '.BBBB.BBBB',
-  '.BB....BB.',
-  '.........'
-];
-SPRITES['mario_big'] = makeSprite(MARIO_BIG, PAL);
-
-// 蘑菇怪 Goomba
-const GOOMBA = [
-  '..NNNNNN..',
-  '.NbbbbbbN.',
-  'NbbbbbbbbN',
-  'NbbbswbbNN',
-  'NbbbbbbbbN',
-  'NbNbbbbNNN',
-  'NbbbbbbbbN',
-  '.NNNNNNNN.',
-  '...N..N...',
-  '..NN..NN..'
-];
-PAL.b='#b07730'; PAL.n='#2a1200';
-SPRITES['goomba'] = makeSprite(GOOMBA, PAL);
-
-// 乌龟 Koopa（绿，面向右）
-const KOOPA = [
-  '....TtT...',
-  '...TTtTT..',
-  '.TTTTTTtTT',
-  'TTttsssTTT',
-  'TTsssKKTtT',
-  '.TTTTTTTT.',
-  '..GGGGGG..',
-  '..GgGgGG..',
-  '..GgGgGG..'
-];
-SPRITES['koopa'] = makeSprite(KOOPA, PAL);
-
-// 蘑菇(红)- 变大道具
-const MUSHROOM = [
-  '....LLLLL....',
-  '...LLLLLLL...',
-  '.LLLLLLLLLLL.',
-  'LLLLLLLLLLLLL',
-  'LLLLLWWLLLLLL',
-  'LLLLLWWWWLLLL',
-  'LLLLLLLLLLLLL',
-  'LLLLLLLLLLLLL',
-  '.EEEEEEEEEEE.',
-  'EeEeEEEEeEEEe',
-  '.EEEEEEEEEEE.'
-];
-SPRITES['mushroom'] = makeSprite(MUSHROOM, PAL);
-
-// 火之花
-const FLOWER = [
-  '....GG....',
-  '...GGGG...',
-  '.FGGGGGGF.',
-  'FGGGFGGGF',
-  '..GGGGGG..',
-  '..GGGGGG..',
-  '..GGGGGG..',
-  '...EEEE...',
-  '...EEEE...',
-  '...EEEE...'
-];
-SPRITES['flower'] = makeSprite(FLOWER, PAL);
-
-// 子弹(火球)
-SPRITES['fireball'] = makeSprite([
-  '..FF..',
-  '.FFFF.',
-  'FFFFFF',
-  'FFFFFF',
-  '.FFFF.',
-  '..FF..'
-], PAL);
-
-// 星星
-SPRITES['star'] = makeSprite([
-  '...YY...',
-  '..YYYY..',
-  '.YYYYYY.',
-  'YYYYYYYY',
-  'YYYYYYYY',
- '.YYYYYY.',
- '..YYYY..',
- '...WW...'
-], PAL);
-
-// 旗杆顶部
-SPRITES['flag_pole'] = makeSprite([
-  'OOO....',
-  'OOOOO..',
-  'OOO....',
-  'RRR....'
-], PAL);
-
-// 城堡(简单)
-SPRITES['castle'] = makeSprite([
-  '..VVVVVV..',
-  '.VVSSSSVV.',
-  'VSSSSSSSSV',
-  'VSSSSSSSSV',
-  'VVVVSSVVVV',
-  ' SSS S S S'.replace(/ /g,'.'), // 门
-  'VVVV..VVVV',
-  'VVVV..VVVV'
-], PAL);
-
-// 云
-SPRITES['cloud'] = makeSprite([
-  '....WWW....',
-  '..WWWWWW..',
-  'WWWWWWWWWW',
-  'WWWWWWWWWW',
-  '..WWWWWW..'
-], PAL);
-
-// 灌木
-SPRITES['bush'] = makeSprite([
-  '..GGGG..',
-  '.GGmGGg.',
-  'GGmGGmGg',
-  'GGmGGmGg',
-  'GGGGGGGG',
-  'GGGGGGGG'
-], PAL);
-PAL.m = '#3a8a22';
-
-// 山
+/* ===== 山（远景装饰） 15x8 ===== */
 SPRITES['hill'] = makeSprite([
-  '.....OOO.....',
-  '....OOOOO....',
-  '...OOOoOOO...',
-  '..OOOoOoOOO..',
-  '.OOOoOOOoOOO.',
-  'OOOoOOOoOOOoO',
-  'OOOOOOOOOOOOO'
+  '......OOO......',
+  '.....OOOOO.....',
+  '....OOOoooo....',
+  '...OOOoooOOO...',
+  '..OOOooOOOoOO..',
+  '..OOOOOOoOOOO..',
+  '.OOOOOOOOOOOOO.',
+  'OOOOOOOOOOOOOOO',
 ], PAL);
 
-// 管道
-SPRITES['pipe'] = makeSprite([
+/* ===== 云 12x6 ===== */
+SPRITES['cloud'] = makeSprite([
+  '....WWWW....',
+  '..WWWWWWWW..',
+  '.WWWWWWWWWW.',
+  'WWWWWWWWWWWW',
+  'WWWWWWWWWWWW',
+  '..WWWWWWWW..',
+], PAL);
+
+/* ===== 灌木 10x6 ===== */
+SPRITES['bush'] = makeSprite([
   '..GGGGGG..',
-  'GGggggggGG',
-  'GGggggggGG',
-  'GGggggggGG',
-  'GGggggggGG'
+  '.GGgGGgGG.',
+  'GGgGGgGGgG',
+  'GGgGGgGGgG',
+  'GGGGGGGGGG',
+  'GGGGGGGGGG',
+], PAL);
+
+/* ===== 管道 12x6 ===== */
+SPRITES['pipe'] = makeSprite([
+  '..GGGGGGGG..',
+  'GGGGGGGGGGGG',
+  'GGggggggggGG',
+  'GGggggggggGG',
+  'GGggggggggGG',
+  'GGggggggggGG',
+], PAL);
+
+/* ===== 旗杆顶旗 8x8 ===== */
+SPRITES['flag_pole'] = makeSprite([
+  'RRR.....',
+  'RRRRR...',
+  'RRR.....',
+  'YYY.....',
+], PAL);
+
+/* ===== 城堡（终点） 14x10 ===== */
+SPRITES['castle'] = makeSprite([
+  '...RRRRRRRR...',
+  '..RRRRRRRRRR..',
+  '.RRRSSSSSSRRR.',
+  '.RRSSSSSSSSRR.',
+  '.RRSSSSSSSSRR.',
+  '.RRRRRSSSRRRR.',
+  '...SSS.SSS....',
+  '...SSS.SSS....',
+  '.RRRRR.RRRRR..',
+  '.RRRRR.RRRRR..',
 ], PAL);
 
 export { SPRITES, makeSprite, PAL };

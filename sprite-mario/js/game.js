@@ -34,9 +34,14 @@ export class Game {
   startLevel(cfg){
     if (this.lives <= 0 && !cfg){ this.gameOver(); return; }
     this.cfg = cfg || this.cfg || { lives:this.lives, startBig:StartConfig.startBig, startFire:StartConfig.startFire, invincible:StartConfig.invincible };
-    this.world = new World(this.levelNo, null, this.cfg);
+    // 保存当前玩家大小/火球状态（复活时保留），仅当是同关复活时
+    const respawn = cfg && cfg.respawn;
+    const keepBig = respawn && this.player ? !this.player.small : this.cfg.startBig;
+    const keepFire = respawn && this.player ? this.player.fire : this.cfg.startFire;
+    const seed = (respawn && this.world) ? this.world.seed : null;  // 复活用同一seed保持同关
+    this.world = new World(this.levelNo, seed, this.cfg);
     this.world.score = this.score;
-    this.player = new Player(this.world, this.cfg);
+    this.player = new Player(this.world, { startBig: keepBig, startFire: keepFire, invincible: this.cfg.invincible });
     this.player.score = this.score;
     this.player.lives = this.lives;
     this.state = 'playing';
@@ -62,7 +67,7 @@ export class Game {
       if (!this.player.alive){
         this.lives--;
         if (this.lives<=0){ this.state='gameover'; this.onStateChange('gameover', this); }
-        else { this.state='clear'; this.clearT=0; this.startLevel({...this.cfg, lives:this.lives}); }
+        else { this.state='clear'; this.clearT=0; this.startLevel({...this.cfg, lives:this.lives, respawn:true}); }
       }
     }
   }

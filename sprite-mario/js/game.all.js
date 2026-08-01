@@ -13,8 +13,8 @@ const CFG = {
   TILE: 32,
   GRAVITY: 0.55,        // 重力
   MAX_FALL: 14,
-  RUN_SPEED: 3.2,       // 基础跑速
-  DASH_SPEED: 5.2,      // 冲刺
+  RUN_SPEED: 2.0,       // 基础跑速（经典手感，下调避免过快）
+  DASH_SPEED: 3.4,      // 冲刺
   JUMP_VEL: -9.5,
   DASH_JUMP_VEL: -11.5, // 冲刺大跳
   // 时间限制(秒)
@@ -22,7 +22,7 @@ const CFG = {
 };
 
 /* 像素精灵地图缩放（每精灵内用 16x16 或 8x8 网格） */
-const PX = 2; // 每个逻辑像素内精灵网格
+const PX = 4; // 每个逻辑像素内精灵网格（提高分辨率，画面更精细）
 
 /* ===== 开局配置（可被 UI 修改） ===== */
 const StartConfig = {
@@ -44,8 +44,9 @@ function saveStartConfig(){
 
 
 /* ===== sprites.js ===== */
-/* ===== 程序化像素精灵绘制 =====
- * 用 8x8/16x16 网格点阵描述精灵，运行时在离屏 canvas 上渲染为高清纹理。
+/* ===== 程序化像素精灵绘制（高精度重绘版） =====
+ * 用字符画描述精灵，运行时在离屏 canvas 上渲染为高清纹理。
+ * PX 在 config.js 中定义（当前=4，更高分辨率）。
  */
 
 /* 简易像素字符画：'.'透明 其他=色板key */
@@ -70,45 +71,219 @@ function makeSprite(rows, pal) {
   return c;
 }
 
+/* ===== 调色板（经典红白配色） ===== */
 const PAL = {
-  'R':'#e03a20','r':'#9c2a15',  // 红(帽/衣)
-  'B':'#2a8cd4','b':'#1a5c9c',  // 蓝(裤)
-  'S':'#f7c5a0','s':'#c98a62',  // 肤色
-  'H':'#5a320a','h':'#341c05',  // 棕头发
-  'K':'#2a1200',                // 眼睛黑
-  'Y':'#ffd800','y':'#c9a400',  // 黄(扣/星)
-  'W':'#fff','w':'#c0c0c0',     // 白
-  'G':'#b07730','g':'#7a4a18',  // 棕壳
-  'O':'#ff8c00',                // 橙
-  'N':'#111',                   // 壳深
-  'T':'#5aa02a','t':'#3a6a18',  // 乌龟绿
-  'M':'#7ce82a',                // 绿
-  'P':'#c96a12','p':'#8a3d00',  // 问号砖土色
-  'C':'#d0d0d0',                // 灰砖
-  'L':'#8fd14f',                // 蘑菇伞
-  'E':'#e8e8e8',                // 蘑菇柄
-  'F':'#ffb400',                // 火球
-  'Q':'#ff7040',                // 金币
-  'V':'#8a1a1a',                // 旗砖
+  'R':'#e03a20',  // 马里奥红(帽/上衣)
+  'r':'#9c2010',  // 深红(阴影)
+  'B':'#2050e0',  // 马里奥蓝(背带裤)
+  'b':'#1030a0',  // 深蓝阴影
+  'S':'#f8d0a8',  // 肤色
+  's':'#d8a070',  // 肤色阴影
+  'H':'#603010',  // 棕色(头发/胡子/鞋)
+  'h':'#381c05',  // 深棕
+  'K':'#1a0a00',  // 黑(眼睛)
+  'W':'#ffffff',  // 白(手套/眼睛高光)
+  'Y':'#ffd800',  // 黄(星/扣)
+  'y':'#c9a000',
+  'G':'#c07830',  // Goomba 板栗棕
+  'g':'#804818',  // 深棕
+  'T':'#50a028',  // Koopa 壳绿
+  't':'#286812',  // 深绿
+  'M':'#e83818',  // 蘑菇伞红
+  'm':'#a02008',
+  'E':'#f8f0e0',  // 蘑菇柄米白
+  'e':'#d0b890',
+  'F':'#ff8020',  // 火焰花橙
+  'O':'#ffa030',  // 火球亮橙
+  'o':'#d06000',  // 火球暗橙
+  'P':'#c96a12',  // 砖块土色
+  'p':'#8a3d00',
+  'Q':'#ffc020',  // 金币金
+  'q':'#d09000',
+  'C':'#e0e0e0',  // 砖灰
+  'c':'#a0a0a0',
+  'D':'#b8b8b8',  // 暗灰
+  'd':'#787878',
 };
-PAL.M = '#7ce82a';
 
-/* ===== 精灵定义 ===== */
 const SPRITES = {};
 
-// 问号砖
+/* ===== 小马里奥（面向右，经典红白配色） 16x20 ===== */
+SPRITES['mario_small'] = makeSprite([
+  '.....RRRRRRR.....',
+  '....RRRRRRRRRR...',
+  '....RRRRRRRRRRR..',
+  '....RRRRRRRRRRR..',
+  '....SSSSSSSSSSS..',
+  '....SSSSKSSSSK...',
+  '....SSSSSSSSSS...',
+  '.....SSSSSSSS....',
+  '....HHSSSSSSHH...',
+  '...HHHSSSSSSHHH..',
+  '...HHHHSSSSHHHH..',
+  '....HHHHHHHHH....',
+  '.....RRRRRRR.....',
+  '....RRRRRRRRR....',
+  '...RRBRRRRRBRR...',
+  '...RBBBRRRBBBR...',
+  '...RBBBBBBBBBR...',
+  '....BBBBBBBBB....',
+  '....BB.BBB.BB....',
+  '....BB.BBB.BB....',
+], PAL);
+
+/* ===== 大马里奥（面向右） 20x28 ===== */
+SPRITES['mario_big'] = makeSprite([
+  '......RRRRRRRR......',
+  '.....RRRRRRRRRR.....',
+  '....RRRRRRRRRRRR....',
+  '....RRRRRRRRRRRR....',
+  '....SSSSSSSSSSSS....',
+  '....SSSSSKSSSSK.....',
+  '....SSSSSSSSSSSS....',
+  '.....SSSSSSSSSS.....',
+  '....HHSSSSSSSSHH....',
+  '...HHHSSSSSSSSHHH...',
+  '...HHHHSSSSSSHHHH...',
+  '....HHHHHHHHHHHH....',
+  '.....RRRRRRRRRR.....',
+  '....RRRRRRRRRRRR....',
+  '....RRRRRRRRRRRR....',
+  '...RRRRRRRRRRRRRR...',
+  '...RRBBRRRRRRBBRR...',
+  '...RBBBBRRRRBBBBR...',
+  '...RBBBBBBBBBBBBR...',
+  '....BBBBBBBBBBBB....',
+  '....BBBB.BBBBBB.....',
+  '....BBBB.BBBBBB.....',
+  '....BBB...BBB.......',
+  '....BBB...BBB.......',
+  '....BB.....BB.......',
+  '....BB.....BB.......',
+  '....BBB...BBB.......',
+  '....BBB...BBB.......',
+], PAL);
+
+/* ===== 板栗仔 Goomba（面向右） 14x14 ===== */
+SPRITES['goomba'] = makeSprite([
+  '....GGGGGG....',
+  '...GGGGGGGG...',
+  '..GGGGGGGGGG..',
+  '..GGgGGGGgGG..',
+  '..GGGGGGGGGG..',
+  '..GGKGGGGKGG..',
+  '..GGGGGGGGGG..',
+  '.GGGGGGGGGGGG.',
+  '.GGGGGGGGGGGG.',
+  '.GGGGgGGgGGGG.',
+  '.GGGGGGGGGGGG.',
+  '..GGGGGGGGGG..',
+  '...ggGGGGgg...',
+  '....gggggg....',
+], PAL);
+
+/* ===== 乌龟 Koopa（面向右） 16x18 ===== */
+SPRITES['koopa'] = makeSprite([
+  '......TTTT......',
+  '.....TTTTTT.....',
+  '....TTTTTTTT....',
+  '....TTTTTTTT....',
+  '....TTsTTTTs....',
+  '....TTTTTTTT....',
+  '....TTTTTTTT....',
+  '.....TTTTTT.....',
+  '....TTTTTTTT....',
+  '...TTTTTTTTTT...',
+  '..TTTTTTTTTTTT..',
+  '..TTTTTTTTTTTT..',
+  '..TTsTTTTTTsTT..',
+  '..TTTTTTTTTTTT..',
+  '..TTTTTTTTTTTT..',
+  '...TTTTTTTTTT...',
+  '....TT....TT....',
+  '....TT....TT....',
+], PAL);
+
+/* ===== 蘑菇（红，变大道具） 16x16 ===== */
+SPRITES['mushroom'] = makeSprite([
+  '.....MMMMMM.....',
+  '....MMMMMMMM....',
+  '...MMMMMMMMMM...',
+  '..MMMMMMMMMMMM..',
+  '..MMMMMMMMMMMM..',
+  '.MMWWMMMMWWMMMM.',
+  '.MMWWMMMMWWMMMM.',
+  '.MMMMMMMMMMMMMM.',
+  '.MMMMMMMMMMMMMM.',
+  '.MMMMMMMMMMMMMM.',
+  '..MMMMMMMMMMMM..',
+  '...EEEEEEEEEE...',
+  '...EEEEEEEEEE...',
+  '...EEEEEEEEEE...',
+  '....EEEEEEEE....',
+  '....EEEEEEEE....',
+], PAL);
+
+/* ===== 火焰花（发子弹道具） 12x16 ===== */
+SPRITES['flower'] = makeSprite([
+  '.....FF.....',
+  '....FFFF....',
+  '...FFFFFF...',
+  '..FFFFFFFF..',
+  '..FFFFFFFF..',
+  '..FFKFFKFF..',
+  '..FFFFFFFF..',
+  '...FFFFFF...',
+  '....FFFF....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+  '....EEEE....',
+], PAL);
+
+/* ===== 星星（无敌道具） 12x12 ===== */
+SPRITES['star'] = makeSprite([
+  '.....YY.....',
+  '....YYYY....',
+  '...YYYYYY...',
+  '..YYYYYYYY..',
+  '.YYYYYYYYYY.',
+  '.YYYYYYYYYY.',
+  '..YYYYYYYY..',
+  '...YYYYYY...',
+  '....YYYY....',
+  '....YWWY....',
+  '....YWWY....',
+  '.....WW.....',
+], PAL);
+
+/* ===== 子弹/火球 8x8 ===== */
+SPRITES['fireball'] = makeSprite([
+  '...OOO...',
+  '..OOOOO..',
+  '.OOYOYOO.',
+  '.OOOOOOO.',
+  '.OOYOYOO.',
+  '..OOOOO..',
+  '...OOO...',
+], PAL);
+
+/* ===== 问号砖 8x8 ===== */
 SPRITES['brick_q'] = makeSprite([
   'pppppppp',
   'pPPPPPPp',
-  'pPYYYYPP',
-  'pPYWYPPP',
-  'pPPPYYYY',
-  'pPPYWYPP',
-  'pYPPPPPP',
-  'pppppppp'
+  'pPQQQQPP',
+  'pPQWWQQP',
+  'pPPQQQQP',
+  'pPQWWQQP',
+  'pQQPPPPQ',
+  'pppppppp',
 ], PAL);
 
-// 已消耗问号砖
+/* ===== 已消耗问号砖 8x8 ===== */
 SPRITES['brick_q_used'] = makeSprite([
   'pppppppp',
   'pPPPPPPp',
@@ -117,224 +292,107 @@ SPRITES['brick_q_used'] = makeSprite([
   'pPPPPPPp',
   'pPPPPPPp',
   'pPPPPPPp',
-  'pppppppp'
+  'pppppppp',
 ], PAL);
 
-// 普通实心砖方块
+/* ===== 普通方块砖 8x8 ===== */
 SPRITES['block'] = makeSprite([
   'CCCCCCCC',
-  'CccccccC',
-  'CccccccC',
+  'CddddddC',
+  'CddddddC',
   'CCCCCCCC',
-  'CccccccC',
-  'CccccccC',
+  'CddddddC',
+  'CddddddC',
   'CCCCCCCC',
-  'ccccccCC'
+  'dddddddd',
 ], PAL);
 
-// 可撞碎砖(金币砖下面的实心)
+/* ===== 可撞碎砖 8x8 ===== */
 SPRITES['brick_b'] = makeSprite([
-  'CgGCgGCc',
-  'gG.CgGCg',
-  'CGgGCgGC',
-  'CgGCgGCg',
-  'gGCgGCgG',
-  'GgGCgGCg',
-  'CgGCgGCG',
-  'gGCgGCgG'
+  'CddCddCc',
+  'ddCCddCd',
+  'CddCCddC',
+  'ddCddCdd',
+  'CddCddCC',
+  'dCddCddC',
+  'CddCddCC',
+  'ddCddCdd',
 ], PAL);
 
-// 金币
+/* ===== 金币 8x8 ===== */
 SPRITES['coin'] = makeSprite([
   '..QQQQ..',
-  '.QYYYYQ.',
-  'QYQYYQYQ',
-  'QYQYYQYQ',
-  'QYQYYQYQ',
-  'QYQYYQYQ',
-  '.QYYYYQ.',
-  '..QQQQ..'
+  '.QQYYQQ.',
+  'QQYQQYQQ',
+  'QQYQQYQQ',
+  'QQYQQYQQ',
+  'QQYQQYQQ',
+  '.QQYYQQ.',
+  '..QQQQ..',
 ], PAL);
 
-/* 小马里奥 - 面向右 */
-const MARIO_SMALL = [
-  '.....RRR.',
-  '....RRRRR',
-  '...RRRRRR',
-  '..RRRRRRR',
-  '..SSSSSSS',
-  '..SSSKSKS',
-  '..SSSSSSS',
-  '.sSSSSSSs',
-  '.sss.sss.',
-  '...R...R.',
-  '...B...B.',
-  '..BB..BB.',
-  '..B....B.'
-];
-SPRITES['mario_small'] = makeSprite(MARIO_SMALL, PAL);
-
-/* 大马里奥 - 面向右 */
-const MARIO_BIG = [
-  '....RRRRR.',
-  '...RRRRRRR',
-  '...RRRRRRR',
-  '...SSSSSSS',
-  '..SSSSSSSS',
-  '..SSSSKSKS',
-  '...SSSSSSS',
-  '...sSSSss.',
-  '....sSSs..',
-  '.RRR..RRR.',
-  '.RRR..RRR.',
-  '.BBB..BBB.',
-  '.BBBB.BBBB',
-  '.BB....BB.',
-  '.........'
-];
-SPRITES['mario_big'] = makeSprite(MARIO_BIG, PAL);
-
-// 蘑菇怪 Goomba
-const GOOMBA = [
-  '..NNNNNN..',
-  '.NbbbbbbN.',
-  'NbbbbbbbbN',
-  'NbbbswbbNN',
-  'NbbbbbbbbN',
-  'NbNbbbbNNN',
-  'NbbbbbbbbN',
-  '.NNNNNNNN.',
-  '...N..N...',
-  '..NN..NN..'
-];
-PAL.b='#b07730'; PAL.n='#2a1200';
-SPRITES['goomba'] = makeSprite(GOOMBA, PAL);
-
-// 乌龟 Koopa（绿，面向右）
-const KOOPA = [
-  '....TtT...',
-  '...TTtTT..',
-  '.TTTTTTtTT',
-  'TTttsssTTT',
-  'TTsssKKTtT',
-  '.TTTTTTTT.',
-  '..GGGGGG..',
-  '..GgGgGG..',
-  '..GgGgGG..'
-];
-SPRITES['koopa'] = makeSprite(KOOPA, PAL);
-
-// 蘑菇(红)- 变大道具
-const MUSHROOM = [
-  '....LLLLL....',
-  '...LLLLLLL...',
-  '.LLLLLLLLLLL.',
-  'LLLLLLLLLLLLL',
-  'LLLLLWWLLLLLL',
-  'LLLLLWWWWLLLL',
-  'LLLLLLLLLLLLL',
-  'LLLLLLLLLLLLL',
-  '.EEEEEEEEEEE.',
-  'EeEeEEEEeEEEe',
-  '.EEEEEEEEEEE.'
-];
-SPRITES['mushroom'] = makeSprite(MUSHROOM, PAL);
-
-// 火之花
-const FLOWER = [
-  '....GG....',
-  '...GGGG...',
-  '.FGGGGGGF.',
-  'FGGGFGGGF',
-  '..GGGGGG..',
-  '..GGGGGG..',
-  '..GGGGGG..',
-  '...EEEE...',
-  '...EEEE...',
-  '...EEEE...'
-];
-SPRITES['flower'] = makeSprite(FLOWER, PAL);
-
-// 子弹(火球)
-SPRITES['fireball'] = makeSprite([
-  '..FF..',
-  '.FFFF.',
-  'FFFFFF',
-  'FFFFFF',
-  '.FFFF.',
-  '..FF..'
-], PAL);
-
-// 星星
-SPRITES['star'] = makeSprite([
-  '...YY...',
-  '..YYYY..',
-  '.YYYYYY.',
-  'YYYYYYYY',
-  'YYYYYYYY',
- '.YYYYYY.',
- '..YYYY..',
- '...WW...'
-], PAL);
-
-// 旗杆顶部
-SPRITES['flag_pole'] = makeSprite([
-  'OOO....',
-  'OOOOO..',
-  'OOO....',
-  'RRR....'
-], PAL);
-
-// 城堡(简单)
-SPRITES['castle'] = makeSprite([
-  '..VVVVVV..',
-  '.VVSSSSVV.',
-  'VSSSSSSSSV',
-  'VSSSSSSSSV',
-  'VVVVSSVVVV',
-  ' SSS S S S'.replace(/ /g,'.'), // 门
-  'VVVV..VVVV',
-  'VVVV..VVVV'
-], PAL);
-
-// 云
-SPRITES['cloud'] = makeSprite([
-  '....WWW....',
-  '..WWWWWW..',
-  'WWWWWWWWWW',
-  'WWWWWWWWWW',
-  '..WWWWWW..'
-], PAL);
-
-// 灌木
-SPRITES['bush'] = makeSprite([
-  '..GGGG..',
-  '.GGmGGg.',
-  'GGmGGmGg',
-  'GGmGGmGg',
-  'GGGGGGGG',
-  'GGGGGGGG'
-], PAL);
-PAL.m = '#3a8a22';
-
-// 山
+/* ===== 山（远景装饰） 15x8 ===== */
 SPRITES['hill'] = makeSprite([
-  '.....OOO.....',
-  '....OOOOO....',
-  '...OOOoOOO...',
-  '..OOOoOoOOO..',
-  '.OOOoOOOoOOO.',
-  'OOOoOOOoOOOoO',
-  'OOOOOOOOOOOOO'
+  '......OOO......',
+  '.....OOOOO.....',
+  '....OOOoooo....',
+  '...OOOoooOOO...',
+  '..OOOooOOOoOO..',
+  '..OOOOOOoOOOO..',
+  '.OOOOOOOOOOOOO.',
+  'OOOOOOOOOOOOOOO',
 ], PAL);
 
-// 管道
-SPRITES['pipe'] = makeSprite([
+/* ===== 云 12x6 ===== */
+SPRITES['cloud'] = makeSprite([
+  '....WWWW....',
+  '..WWWWWWWW..',
+  '.WWWWWWWWWW.',
+  'WWWWWWWWWWWW',
+  'WWWWWWWWWWWW',
+  '..WWWWWWWW..',
+], PAL);
+
+/* ===== 灌木 10x6 ===== */
+SPRITES['bush'] = makeSprite([
   '..GGGGGG..',
-  'GGggggggGG',
-  'GGggggggGG',
-  'GGggggggGG',
-  'GGggggggGG'
+  '.GGgGGgGG.',
+  'GGgGGgGGgG',
+  'GGgGGgGGgG',
+  'GGGGGGGGGG',
+  'GGGGGGGGGG',
+], PAL);
+
+/* ===== 管道 12x6 ===== */
+SPRITES['pipe'] = makeSprite([
+  '..GGGGGGGG..',
+  'GGGGGGGGGGGG',
+  'GGggggggggGG',
+  'GGggggggggGG',
+  'GGggggggggGG',
+  'GGggggggggGG',
+], PAL);
+
+/* ===== 旗杆顶旗 8x8 ===== */
+SPRITES['flag_pole'] = makeSprite([
+  'RRR.....',
+  'RRRRR...',
+  'RRR.....',
+  'YYY.....',
+], PAL);
+
+/* ===== 城堡（终点） 14x10 ===== */
+SPRITES['castle'] = makeSprite([
+  '...RRRRRRRR...',
+  '..RRRRRRRRRR..',
+  '.RRRSSSSSSRRR.',
+  '.RRSSSSSSSSRR.',
+  '.RRSSSSSSSSRR.',
+  '.RRRRRSSSRRRR.',
+  '...SSS.SSS....',
+  '...SSS.SSS....',
+  '.RRRRR.RRRRR..',
+  '.RRRRR.RRRRR..',
 ], PAL);
 
 
@@ -716,8 +774,9 @@ class Bullet {
 class World {
   constructor(levelNo, seed, startCfg){
     this.levelNo = levelNo;
-    // 生成地图
-    const gen = generateLevel(levelNo, seed);
+    // 生成地图（seed 固定后同一关卡可复现）
+    this.seed = seed || ('level'+levelNo);
+    const gen = generateLevel(levelNo, this.seed);
     this.w = gen.w; this.h = gen.h;
     this.tiles = gen.tiles;
     this.groundY = gen.groundY;
@@ -971,25 +1030,29 @@ class Renderer {
     // 旗杆
     this.drawFlag(ctx, world, camX);
 
-    // 道具
-    for (const p of world.powerups) this.drawSprite(ctx, spriteFor(p.type), p.x-camX, p.y);
+    // 道具（逻辑1格高）
+    for (const p of world.powerups) this.drawSprite(ctx, spriteFor(p.type), p.x-camX, p.y, {fit:TILE});
     // 敌人
     for (const e of world.enemies) if(e.alive||e.deadT>0) this.drawEnemy(ctx,e,camX);
-    // 子弹
-    for (const b of world.bullets) if(b.alive) this.drawSprite(ctx, SPRITES.fireball, b.x-camX, b.y);
+    // 子弹（逻辑约半格）
+    for (const b of world.bullets) if(b.alive) this.drawSprite(ctx, SPRITES.fireball, b.x-camX, b.y, {fit:14});
     // 金币动画
-    for (const c of world.coinFx) if(c.t>0) this.drawSprite(ctx, SPRITES.coin, c.x*TILE-camX, c.y*TILE-14-(24-c.t)*0.3, {scale:0.85});
+    for (const c of world.coinFx) if(c.t>0) this.drawSprite(ctx, SPRITES.coin, c.x*TILE-camX, c.y*TILE-14-(24-c.t)*0.3, {fit:TILE*0.85});
     // 碎砖/顶块动画
-    for (const s of world.smashed) if(s.t>0 && s.bump) this.drawSprite(ctx, SPRITES.brick_q, s.x*TILE-camX, s.y*TILE-4*(1-s.t/12));
+    for (const s of world.smashed) if(s.t>0 && s.bump) this.drawSprite(ctx, SPRITES.brick_q, s.x*TILE-camX, s.y*TILE-4*(1-s.t/12), {fit:TILE});
     ctx.restore();
   }
 
   drawSprite(ctx, spl, sx, sy, o={}){
     if(!spl) return;
-    const s=o.scale||1, w=spl.width*s, h=spl.height*s;
+    // o.fit: 逻辑高度(px) — 将精灵缩放到该逻辑高度，宽度按比例
+    // o.scale: 直接缩放倍数（与 fit 二选一，fit 优先）
+    let w=spl.width, h=spl.height;
+    if(o.fit){ const k=o.fit/spl.height; w=spl.width*k; h=o.fit; }
+    else if(o.scale){ w=spl.width*o.scale; h=spl.height*o.scale; }
     ctx.save();
     ctx.globalAlpha = o.alpha!==undefined?o.alpha:1;
-    if(o.flip){ctx.translate(sx+w,sy);ctx.scale(-1,1);ctx.drawImage(spl,0,0,w,h);}
+    if(o.flip){ ctx.translate(sx+w,sy); ctx.scale(-1,1); ctx.drawImage(spl,0,0,w,h); }
     else ctx.drawImage(spl,sx,sy,w,h);
     ctx.restore();
   }
@@ -1017,7 +1080,7 @@ class Renderer {
     if(e.dead){ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y+e.h-6,e.w,6);return;}
     if(e.shell){ctx.fillStyle='#7ce82a';ctx.fillRect(px+1,e.y+3,e.w-2,e.h-4);return;}
     const spr=e.type==='goomba'?SPRITES.goomba:SPRITES.koopa;
-    this.drawSprite(ctx,spr,px,e.y,{flip:e.vx<0});
+    this.drawSprite(ctx,spr,px,e.y,{flip:e.vx<0, fit:TILE});
   }
 
   // 玩家(由上层调用)
@@ -1029,8 +1092,8 @@ class Renderer {
     if(!spr) spr = SPRITES.mario_small;
     const flicker = player.hurtFlashT>0 && Math.floor(player.hurtFlashT/6)%2===0;
     ctx.globalAlpha = flicker?0.5:1;
-    const o={flip:player.dir<0};
-    // 比例适配: 马里奥精灵让身体适合 h
+    const o={flip:player.dir<0, fit:player.h};
+    // 按玩家逻辑高度缩放精灵(占格不变，细节放大)
     this.drawSprite(ctx, spr, sx, player.y, o);
     ctx.restore();
   }
@@ -1241,9 +1304,14 @@ class Game {
   startLevel(cfg){
     if (this.lives <= 0 && !cfg){ this.gameOver(); return; }
     this.cfg = cfg || this.cfg || { lives:this.lives, startBig:StartConfig.startBig, startFire:StartConfig.startFire, invincible:StartConfig.invincible };
-    this.world = new World(this.levelNo, null, this.cfg);
+    // 保存当前玩家大小/火球状态（复活时保留），仅当是同关复活时
+    const respawn = cfg && cfg.respawn;
+    const keepBig = respawn && this.player ? !this.player.small : this.cfg.startBig;
+    const keepFire = respawn && this.player ? this.player.fire : this.cfg.startFire;
+    const seed = (respawn && this.world) ? this.world.seed : null;  // 复活用同一seed保持同关
+    this.world = new World(this.levelNo, seed, this.cfg);
     this.world.score = this.score;
-    this.player = new Player(this.world, this.cfg);
+    this.player = new Player(this.world, { startBig: keepBig, startFire: keepFire, invincible: this.cfg.invincible });
     this.player.score = this.score;
     this.player.lives = this.lives;
     this.state = 'playing';
@@ -1269,7 +1337,7 @@ class Game {
       if (!this.player.alive){
         this.lives--;
         if (this.lives<=0){ this.state='gameover'; this.onStateChange('gameover', this); }
-        else { this.state='clear'; this.clearT=0; this.startLevel({...this.cfg, lives:this.lives}); }
+        else { this.state='clear'; this.clearT=0; this.startLevel({...this.cfg, lives:this.lives, respawn:true}); }
       }
     }
   }

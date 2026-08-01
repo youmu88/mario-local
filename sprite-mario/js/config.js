@@ -7,8 +7,8 @@ const CFG = {
   TILE: 32,
   GRAVITY: 0.55,        // 重力
   MAX_FALL: 14,
-  RUN_SPEED: 3.2,       // 基础跑速
-  DASH_SPEED: 5.2,      // 冲刺
+  RUN_SPEED: 2.0,       // 基础跑速（经典手感，下调避免过快）
+  DASH_SPEED: 3.4,      // 冲刺
   JUMP_VEL: -9.5,
   DASH_JUMP_VEL: -11.5, // 冲刺大跳
   // 时间限制(秒)
@@ -16,7 +16,7 @@ const CFG = {
 };
 
 /* 像素精灵地图缩放（每精灵内用 16x16 或 8x8 网格） */
-const PX = 2; // 每个逻辑像素内精灵网格
+const PX = 4; // 每个逻辑像素内精灵网格（提高分辨率，画面更精细）
 
 /* ===== 开局配置（可被 UI 修改） ===== */
 const StartConfig = {

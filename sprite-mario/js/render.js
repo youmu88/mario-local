@@ -53,25 +53,29 @@ export class Renderer {
     // 旗杆
     this.drawFlag(ctx, world, camX);
 
-    // 道具
-    for (const p of world.powerups) this.drawSprite(ctx, spriteFor(p.type), p.x-camX, p.y);
+    // 道具（逻辑1格高）
+    for (const p of world.powerups) this.drawSprite(ctx, spriteFor(p.type), p.x-camX, p.y, {fit:TILE});
     // 敌人
     for (const e of world.enemies) if(e.alive||e.deadT>0) this.drawEnemy(ctx,e,camX);
-    // 子弹
-    for (const b of world.bullets) if(b.alive) this.drawSprite(ctx, SPRITES.fireball, b.x-camX, b.y);
+    // 子弹（逻辑约半格）
+    for (const b of world.bullets) if(b.alive) this.drawSprite(ctx, SPRITES.fireball, b.x-camX, b.y, {fit:14});
     // 金币动画
-    for (const c of world.coinFx) if(c.t>0) this.drawSprite(ctx, SPRITES.coin, c.x*TILE-camX, c.y*TILE-14-(24-c.t)*0.3, {scale:0.85});
+    for (const c of world.coinFx) if(c.t>0) this.drawSprite(ctx, SPRITES.coin, c.x*TILE-camX, c.y*TILE-14-(24-c.t)*0.3, {fit:TILE*0.85});
     // 碎砖/顶块动画
-    for (const s of world.smashed) if(s.t>0 && s.bump) this.drawSprite(ctx, SPRITES.brick_q, s.x*TILE-camX, s.y*TILE-4*(1-s.t/12));
+    for (const s of world.smashed) if(s.t>0 && s.bump) this.drawSprite(ctx, SPRITES.brick_q, s.x*TILE-camX, s.y*TILE-4*(1-s.t/12), {fit:TILE});
     ctx.restore();
   }
 
   drawSprite(ctx, spl, sx, sy, o={}){
     if(!spl) return;
-    const s=o.scale||1, w=spl.width*s, h=spl.height*s;
+    // o.fit: 逻辑高度(px) — 将精灵缩放到该逻辑高度，宽度按比例
+    // o.scale: 直接缩放倍数（与 fit 二选一，fit 优先）
+    let w=spl.width, h=spl.height;
+    if(o.fit){ const k=o.fit/spl.height; w=spl.width*k; h=o.fit; }
+    else if(o.scale){ w=spl.width*o.scale; h=spl.height*o.scale; }
     ctx.save();
     ctx.globalAlpha = o.alpha!==undefined?o.alpha:1;
-    if(o.flip){ctx.translate(sx+w,sy);ctx.scale(-1,1);ctx.drawImage(spl,0,0,w,h);}
+    if(o.flip){ ctx.translate(sx+w,sy); ctx.scale(-1,1); ctx.drawImage(spl,0,0,w,h); }
     else ctx.drawImage(spl,sx,sy,w,h);
     ctx.restore();
   }
@@ -99,7 +103,7 @@ export class Renderer {
     if(e.dead){ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y+e.h-6,e.w,6);return;}
     if(e.shell){ctx.fillStyle='#7ce82a';ctx.fillRect(px+1,e.y+3,e.w-2,e.h-4);return;}
     const spr=e.type==='goomba'?SPRITES.goomba:SPRITES.koopa;
-    this.drawSprite(ctx,spr,px,e.y,{flip:e.vx<0});
+    this.drawSprite(ctx,spr,px,e.y,{flip:e.vx<0, fit:TILE});
   }
 
   // 玩家(由上层调用)
@@ -111,8 +115,8 @@ export class Renderer {
     if(!spr) spr = SPRITES.mario_small;
     const flicker = player.hurtFlashT>0 && Math.floor(player.hurtFlashT/6)%2===0;
     ctx.globalAlpha = flicker?0.5:1;
-    const o={flip:player.dir<0};
-    // 比例适配: 马里奥精灵让身体适合 h
+    const o={flip:player.dir<0, fit:player.h};
+    // 按玩家逻辑高度缩放精灵(占格不变，细节放大)
     this.drawSprite(ctx, spr, sx, player.y, o);
     ctx.restore();
   }

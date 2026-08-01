@@ -1,2 +1,4 @@
 .DS_Store
 node_modules/
+mario_test.mjs
+*.log

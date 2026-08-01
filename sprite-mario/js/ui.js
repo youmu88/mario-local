@@ -85,23 +85,25 @@ export class UI {
     const s = this.scr('result');
     let title='', msg='', btnText='';
     if (type==='gameover'){ title='GAME OVER'; msg='再接再厉'; btnText='回到主菜单'; }
-    else if (type==='clear'){ title='COURSE CLEAR!'; msg=`本关得分 ${game.score}`; btnText='继续下一关'; }
+    else if (type==='clear'){ title='COURSE CLEAR!'; msg=`本关得分 ${game.score}`; btnText=''; }
     else { title=''; msg=''; btnText='点击重试'; }
     s.innerHTML = `
       <div class="title" style="font-size:34px">${title}</div>
       <div class="status-line">${msg}</div>
-      <button class="primary-btn red">${btnText}</button>
-      <div class="loading"></div>
+      ${btnText ? `<button class="primary-btn red">${btnText}</button>` : '<div class="loading"></div>'}
     `;
     this.overlay.appendChild(s);
-    const btn = s.querySelector('.primary-btn');
-    if (type==='gameover') btn.addEventListener('click', ()=>this.showMenu());
-    else btn.addEventListener('click', ()=>this.onRetry());
-    // clear 界面：按钮显示自动跳关倒计时（可点击立即进入下一关；倒计时结束 game 自动跳关）
+    if (btnText){
+      const btn = s.querySelector('.primary-btn');
+      if (type==='gameover') btn.addEventListener('click', ()=>this.showMenu());
+      else btn.addEventListener('click', ()=>this.onRetry());
+    }
+    // clear 界面：无按钮，倒计时结束由 game 自动进入下一关（无需点击确认）
     if (type==='clear'){
+      const el = s.querySelector('.loading');
       const upd = ()=>{
         const r = game.clearRemain || 0;
-        btn.textContent = `${btnText} (${r})`;
+        if (el) el.textContent = r>0 ? `${r} 秒后自动进入下一关…` : '正在进入下一关…';
         if (r<=0){ clearInterval(this.clearTimer); this.clearTimer=null; }
       };
       upd();

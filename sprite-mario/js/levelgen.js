@@ -44,8 +44,8 @@ export function generateLevel(levelNo, seedStr){
   const H = 12;                     // 逻辑高度(块)
   const groundY = H-1;              // 地板行
   const GROUND = 5;
-  // 关卡长度随关卡显著增长：每关 +30 格，进入下一关后明显更长的旅程
-  const w = 190 + levelNo*30;       // level1=220 level2=250 level3=280 ...
+  // 关卡长度随关卡显著增长：每关 +60 格（增长翻倍），进入下一关后旅程明显更长
+  const w = 210 + levelNo*60;       // level1=270 level2=330 level3=390 ...
   const tiles = createEmpty(w, H);
   // 地板（单行：H=12 时 tiles[groundY+1] 越界恒不生效，地面仅一行，脚底行=groundY）
   for (let x=0;x<w;x++) tiles[groundY][x] = GROUND;
@@ -60,10 +60,11 @@ export function generateLevel(levelNo, seedStr){
   const pitChance = Math.min(0.55 + levelNo*0.03, 0.9);
   const enemyRate = Math.min(0.55 + levelNo*0.08, 1.8);
 
-  // 问号块：同时写入 tiles（tile 3），保证渲染/碰撞/可顶
+  // 问号块：离地 3 格（groundY-4，头顶留 2 格空隙），跳起可顶、走路不挡（大马里奥 2 格高也不撞头）
   const pushBlock = (bx, kind, content) => {
-    blocks.push({x:bx, y:groundY-2, kind, content});
-    tiles[groundY-2][bx] = 3;
+    const by = groundY - 4;
+    blocks.push({x:bx, y:by, kind, content});
+    tiles[by][bx] = 3;
   };
     // 问号块道具内容：金币/蘑菇/花/星/1up（经典分布，统一为具体类型）
   const pickContent = () => {
@@ -107,15 +108,8 @@ export function generateLevel(levelNo, seedStr){
           tiles[platY][x+px] = 1;
           if (rng()<0.8) tiles[platY+1][x+px]=1; // 高度2
         }
-        // 平台上放块
-        if (rng()<0.6 && x+platW < w-15){
-          const kb = rng();
-          if (kb<0.5) pushBlock(x+1,'?', rng()<0.55?'coin':pickContent());
-          else tiles[platY-1>=0?platY-1:platY-1][x+2]=2;
-          x += platW;
-        } else {
-          x += platW + ri(1,3);
-        }
+        // 纯平台（不在平台上放低空块，避免只能踩不能顶）
+        x += platW + ri(1,3);
       } else {
         // 空中问号块列
         if (rng()<0.6 && x < w-16){

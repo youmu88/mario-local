@@ -235,7 +235,7 @@ export class Game {
     // 不再立即弹过关界面：动画完成(走进城堡)后由 updateClear 发出 onStateChange('clear')
   }
 
-  // 过关动画推进：旗子下滑(1.2s) + 玩家滑旗/走城堡；完成后显示 COURSE CLEAR 并自动倒计时跳关
+  // 过关动画推进：旗子下滑(1.2s) + 玩家滑旗/走城堡；完成后显示 COURSE CLEAR 并自动进入下一关（全程无需点击）
   updateClear(dt){
     const w=this.world, p=this.player;
     this.clearT += dt;
@@ -245,16 +245,16 @@ export class Game {
         this.animDone = true;
         this.resultT = 0;
         this.sfx.clear();                      // 走进城堡：播放过关旋律
-        this.onStateChange('clear', this);     // 此时才显示 COURSE CLEAR 覆盖层
+        this.onStateChange('clear', this);     // 显示 COURSE CLEAR（无按钮，自动跳关）
       }
     } else {
       this.resultT += dt;
-      if (this.resultT >= 5) this.nextLevel(); // 自动倒计时跳关
+      if (this.resultT >= 3) this.nextLevel(); // 自动进入下一关（无需点击确认）
     }
   }
 
-  // 剩余自动跳关秒数（供 UI 按钮倒计时显示）
-  get clearRemain(){ return Math.max(0, Math.ceil(5 - (this.resultT||0))); }
+  // 剩余自动跳关秒数（供 UI 倒计时文本显示）
+  get clearRemain(){ return Math.max(0, Math.ceil(3 - (this.resultT||0))); }
 
   nextLevel(){
     this.levelNo++;

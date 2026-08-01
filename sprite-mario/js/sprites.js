@@ -399,28 +399,44 @@ SPRITES['fireball'] = makeSprite([
   '...OOO...',
 ], PAL);
 
-/* ===== 问号砖 8x8 ===== */
+/* ===== 问号砖 16x16（经典金色方块+白色?，可顶出道具） ===== */
 SPRITES['brick_q'] = makeSprite([
-  'pppppppp',
-  'pPPPPPPp',
-  'pPQQQQPP',
-  'pPQWWQQP',
-  'pPPQQQQP',
-  'pPQWWQQP',
-  'pQQPPPPQ',
-  'pppppppp',
+  'pppppppppppppppp',
+  'pQQQQQQQQQQQQQQp',
+  'pQQQQQQQQQQQQQQp',
+  'pQQQWWWWWWQQQQQp',
+  'pQQWWWWWWWWQQQQp',
+  'pQQWWWWWWWWQQQQp',
+  'pQQQQQQQQWWQQQQp',
+  'pQQQQQQQQWWQQQQp',
+  'pQQQQQQQQWWQQQQp',
+  'pQQQQQQWWQQQQQQp',
+  'pQQQQQQWWQQQQQQp',
+  'pQQQQQQQQQQQQQQp',
+  'pQQQQQWWQQQQQQQp',
+  'pQQQQQWWQQQQQQQp',
+  'pQQQQQQQQQQQQQQp',
+  'pppppppppppppppp',
 ], PAL);
 
-/* ===== 已消耗问号砖 8x8 ===== */
+/* ===== 已消耗问号砖 16x16（顶用后变暗金，无?图案） ===== */
 SPRITES['brick_q_used'] = makeSprite([
-  'pppppppp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pppppppp',
+  'pppppppppppppppp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pppppppppppppppp',
 ], PAL);
 
 /* ===== 普通方块砖 8x8 ===== */

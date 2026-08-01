@@ -446,28 +446,44 @@ SPRITES['fireball'] = makeSprite([
   '...OOO...',
 ], PAL);
 
-/* ===== 问号砖 8x8 ===== */
+/* ===== 问号砖 16x16（经典金色方块+白色?，可顶出道具） ===== */
 SPRITES['brick_q'] = makeSprite([
-  'pppppppp',
-  'pPPPPPPp',
-  'pPQQQQPP',
-  'pPQWWQQP',
-  'pPPQQQQP',
-  'pPQWWQQP',
-  'pQQPPPPQ',
-  'pppppppp',
+  'pppppppppppppppp',
+  'pQQQQQQQQQQQQQQp',
+  'pQQQQQQQQQQQQQQp',
+  'pQQQWWWWWWQQQQQp',
+  'pQQWWWWWWWWQQQQp',
+  'pQQWWWWWWWWQQQQp',
+  'pQQQQQQQQWWQQQQp',
+  'pQQQQQQQQWWQQQQp',
+  'pQQQQQQQQWWQQQQp',
+  'pQQQQQQWWQQQQQQp',
+  'pQQQQQQWWQQQQQQp',
+  'pQQQQQQQQQQQQQQp',
+  'pQQQQQWWQQQQQQQp',
+  'pQQQQQWWQQQQQQQp',
+  'pQQQQQQQQQQQQQQp',
+  'pppppppppppppppp',
 ], PAL);
 
-/* ===== 已消耗问号砖 8x8 ===== */
+/* ===== 已消耗问号砖 16x16（顶用后变暗金，无?图案） ===== */
 SPRITES['brick_q_used'] = makeSprite([
-  'pppppppp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pPPPPPPp',
-  'pppppppp',
+  'pppppppppppppppp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pqqqqqqqqqqqqqqp',
+  'pppppppppppppppp',
 ], PAL);
 
 /* ===== 普通方块砖 8x8 ===== */
@@ -816,8 +832,8 @@ function generateLevel(levelNo, seedStr){
   const H = 12;                     // 逻辑高度(块)
   const groundY = H-1;              // 地板行
   const GROUND = 5;
-  // 关卡长度随关卡显著增长：每关 +30 格，进入下一关后明显更长的旅程
-  const w = 190 + levelNo*30;       // level1=220 level2=250 level3=280 ...
+  // 关卡长度随关卡显著增长：每关 +60 格（增长翻倍），进入下一关后旅程明显更长
+  const w = 210 + levelNo*60;       // level1=270 level2=330 level3=390 ...
   const tiles = createEmpty(w, H);
   // 地板（单行：H=12 时 tiles[groundY+1] 越界恒不生效，地面仅一行，脚底行=groundY）
   for (let x=0;x<w;x++) tiles[groundY][x] = GROUND;
@@ -832,10 +848,11 @@ function generateLevel(levelNo, seedStr){
   const pitChance = Math.min(0.55 + levelNo*0.03, 0.9);
   const enemyRate = Math.min(0.55 + levelNo*0.08, 1.8);
 
-  // 问号块：同时写入 tiles（tile 3），保证渲染/碰撞/可顶
+  // 问号块：离地 3 格（groundY-4，头顶留 2 格空隙），跳起可顶、走路不挡（大马里奥 2 格高也不撞头）
   const pushBlock = (bx, kind, content) => {
-    blocks.push({x:bx, y:groundY-2, kind, content});
-    tiles[groundY-2][bx] = 3;
+    const by = groundY - 4;
+    blocks.push({x:bx, y:by, kind, content});
+    tiles[by][bx] = 3;
   };
     // 问号块道具内容：金币/蘑菇/花/星/1up（经典分布，统一为具体类型）
   const pickContent = () => {
@@ -879,15 +896,8 @@ function generateLevel(levelNo, seedStr){
           tiles[platY][x+px] = 1;
           if (rng()<0.8) tiles[platY+1][x+px]=1; // 高度2
         }
-        // 平台上放块
-        if (rng()<0.6 && x+platW < w-15){
-          const kb = rng();
-          if (kb<0.5) pushBlock(x+1,'?', rng()<0.55?'coin':pickContent());
-          else tiles[platY-1>=0?platY-1:platY-1][x+2]=2;
-          x += platW;
-        } else {
-          x += platW + ri(1,3);
-        }
+        // 纯平台（不在平台上放低空块，避免只能踩不能顶）
+        x += platW + ri(1,3);
       } else {
         // 空中问号块列
         if (rng()<0.6 && x < w-16){
@@ -2112,7 +2122,7 @@ class Game {
     // 不再立即弹过关界面：动画完成(走进城堡)后由 updateClear 发出 onStateChange('clear')
   }
 
-  // 过关动画推进：旗子下滑(1.2s) + 玩家滑旗/走城堡；完成后显示 COURSE CLEAR 并自动倒计时跳关
+  // 过关动画推进：旗子下滑(1.2s) + 玩家滑旗/走城堡；完成后显示 COURSE CLEAR 并自动进入下一关（全程无需点击）
   updateClear(dt){
     const w=this.world, p=this.player;
     this.clearT += dt;
@@ -2122,16 +2132,16 @@ class Game {
         this.animDone = true;
         this.resultT = 0;
         this.sfx.clear();                      // 走进城堡：播放过关旋律
-        this.onStateChange('clear', this);     // 此时才显示 COURSE CLEAR 覆盖层
+        this.onStateChange('clear', this);     // 显示 COURSE CLEAR（无按钮，自动跳关）
       }
     } else {
       this.resultT += dt;
-      if (this.resultT >= 5) this.nextLevel(); // 自动倒计时跳关
+      if (this.resultT >= 3) this.nextLevel(); // 自动进入下一关（无需点击确认）
     }
   }
 
-  // 剩余自动跳关秒数（供 UI 按钮倒计时显示）
-  get clearRemain(){ return Math.max(0, Math.ceil(5 - (this.resultT||0))); }
+  // 剩余自动跳关秒数（供 UI 倒计时文本显示）
+  get clearRemain(){ return Math.max(0, Math.ceil(3 - (this.resultT||0))); }
 
   nextLevel(){
     this.levelNo++;
@@ -2253,23 +2263,25 @@ class UI {
     const s = this.scr('result');
     let title='', msg='', btnText='';
     if (type==='gameover'){ title='GAME OVER'; msg='再接再厉'; btnText='回到主菜单'; }
-    else if (type==='clear'){ title='COURSE CLEAR!'; msg=`本关得分 ${game.score}`; btnText='继续下一关'; }
+    else if (type==='clear'){ title='COURSE CLEAR!'; msg=`本关得分 ${game.score}`; btnText=''; }
     else { title=''; msg=''; btnText='点击重试'; }
     s.innerHTML = `
       <div class="title" style="font-size:34px">${title}</div>
       <div class="status-line">${msg}</div>
-      <button class="primary-btn red">${btnText}</button>
-      <div class="loading"></div>
+      ${btnText ? `<button class="primary-btn red">${btnText}</button>` : '<div class="loading"></div>'}
     `;
     this.overlay.appendChild(s);
-    const btn = s.querySelector('.primary-btn');
-    if (type==='gameover') btn.addEventListener('click', ()=>this.showMenu());
-    else btn.addEventListener('click', ()=>this.onRetry());
-    // clear 界面：按钮显示自动跳关倒计时（可点击立即进入下一关；倒计时结束 game 自动跳关）
+    if (btnText){
+      const btn = s.querySelector('.primary-btn');
+      if (type==='gameover') btn.addEventListener('click', ()=>this.showMenu());
+      else btn.addEventListener('click', ()=>this.onRetry());
+    }
+    // clear 界面：无按钮，倒计时结束由 game 自动进入下一关（无需点击确认）
     if (type==='clear'){
+      const el = s.querySelector('.loading');
       const upd = ()=>{
         const r = game.clearRemain || 0;
-        btn.textContent = `${btnText} (${r})`;
+        if (el) el.textContent = r>0 ? `${r} 秒后自动进入下一关…` : '正在进入下一关…';
         if (r<=0){ clearInterval(this.clearTimer); this.clearTimer=null; }
       };
       upd();

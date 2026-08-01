@@ -107,7 +107,8 @@ export class Renderer {
   // 敌人渲染：动画帧交替（走/爬）、踩扁帧、壳、食人花/尖刺龟/飞行
   drawEnemy(ctx,e,camX){
     const px=e.x-camX;
-    const flip = (e.dir!==undefined && e.dir<0);
+    // 官方素材敌人(koopa/goomba/flyer)本身面向左（头左壳右），dir<0 向左走时不翻转、dir>0 向右走才翻转；spiny 程序化精灵左右对称不受影响
+    const flip = (e.dir!==undefined && e.dir>0);
     // 食人花（管道伸缩，张合动画）
     if (e.type==='piranha'){
       const spr = e.frame ? SPRITES.piranha_2 : SPRITES.piranha;
@@ -146,10 +147,10 @@ export class Renderer {
     if (player.small){
       if (!player.onGround){ spr = SPRITES.mario_small_jump; }
       else if (Math.abs(player.vx)>0.1){
-        const r = Math.floor(player.frames/5)%4;
-        spr = r===0 ? SPRITES.mario_small
-          : (r===1 ? SPRITES.mario_small_run2
-          : (r===2 ? SPRITES.mario_small_run3 : SPRITES.mario_small_run4));
+        // 跑步动画只循环跑步帧(run2/3/4)，不插入站立帧，避免跑动中“一步一顿”
+        const r = Math.floor(player.frames/5)%3;
+        spr = r===0 ? SPRITES.mario_small_run2
+          : (r===1 ? SPRITES.mario_small_run3 : SPRITES.mario_small_run4);
       } else spr = SPRITES.mario_small;
     } else {
       if (!player.onGround){ spr = SPRITES.mario_big; }
@@ -160,8 +161,9 @@ export class Renderer {
     const flicker = player.hurtFlashT>0 && Math.floor(player.hurtFlashT/6)%2===0;
     ctx.globalAlpha = flicker?0.5:1;
     const o={flip:player.dir<0, fit:player.h};
-    // 按玩家逻辑高度缩放精灵(占格不变，细节放大)
-    this.drawSprite(ctx, spr, sx, player.y, o);
+    // 按玩家逻辑高度缩放精灵(占格不变，细节放大)；水平居中，避免各帧宽度不同导致跑动左右跳动
+    const w = spr.width * (player.h/spr.height);
+    this.drawSprite(ctx, spr, sx + (player.w - w)/2, player.y, o);
     ctx.restore();
   }
 

@@ -1,5 +1,5 @@
-/* 离线 Service Worker */
-const CACHE = 'super-mario-v2';
+/* 离线 Service Worker（network-first：代码更新后刷新即生效，离线时回退缓存） */
+const CACHE = 'super-mario-v3';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/style.css',
   './js/game.all.js',
@@ -16,11 +16,12 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // network-first：优先网络（保证代码更新即生效），离线时回退缓存
   e.respondWith(
-    caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
+    fetch(e.request).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy));
       return res;
-    }).catch(() => caches.match('./index.html')))
+    }).catch(() => caches.match(e.request).then(hit => hit || caches.match('./index.html')))
   );
 });

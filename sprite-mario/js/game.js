@@ -42,6 +42,7 @@ export class Game {
     this.world = new World(this.levelNo, seed, this.cfg);
     this.world.score = this.score;
     this.player = new Player(this.world, { startBig: keepBig, startFire: keepFire, invincible: this.cfg.invincible });
+    this.world.player = this.player;   // 挂载玩家引用（食人花等需要感知玩家位置）
     this.player.score = this.score;
     this.player.lives = this.lives;
     this.state = 'playing';
@@ -76,7 +77,7 @@ export class Game {
     const w = this.world;
     // 道具
     for (const p of w.powerups){ if (p.alive) p.update(w); }
-    // 敌人
+    // 敌人（含食人花/尖刺龟/飞行敌人）
     for (const e of w.enemies){ if (e.alive) e.update(w); }
     // 子弹
     for (const b of w.bullets){ if (b.alive) b.update(w); }
@@ -110,25 +111,43 @@ export class Game {
     // 与敌人
     for (const e of w.enemies){
       if (!e.alive || e.dead) continue;
-      const ebox = {x:e.x,y:e.y,w:e.w,h:e.h};
+      const ebox = e.type==='piranha' ? e.box : {x:e.x,y:e.y,w:e.w,h:e.h};
       if (!aabb(pa, ebox)) continue;
-      // 踩踏判断(下落且脚在敌上方)
-      const stomping = p.vy>0 && (p.y + p.h - e.y) < 14;
+      const stomping = p.vy>0 && (p.y + p.h - e.y) < 16;
       if (stomping){
-        this.stomp(e);
+        // 可踩：goomba/koopa/flyer；不可踩：piranha(花)/spiny(尖刺，踩踏受伤)
+        if (e.type==='piranha' || e.type==='spiny'){
+          if (p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+        } else {
+          this.stomp(e);
+        }
       } else {
-        // 被碰
-        if (p.starT<=0 && p.hurtFlashT<=0){
-          this.hurtPlayer();
+        // 侧面碰撞
+        if (e.type==='koopa' && e.shell && e.kicked){
+          // 被踢出的壳撞到玩家：刚踢出瞬间不伤，之后受伤（原版行为）
+          if (e.kickT > 10 && p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+          continue;
+        }
+        if (p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+      }
+    }
+    // 踢出的壳击杀其他敌人（撞墙反弹连杀）
+    for (const k of w.enemies){
+      if (!k.alive || !k.shell || !k.kicked) continue;
+      for (const e of w.enemies){
+        if (e===k || !e.alive || e.dead || e.shell) continue;
+        if (aabb({x:k.x,y:k.y,w:k.w,h:k.h},{x:e.x,y:e.y,w:e.w,h:e.h})){
+          e.dead=true; e.deadT=20; e.vx=0;
+          this.addScore(200); this.sfx.stomp();
         }
       }
     }
-    // 子弹击杀敌人(火球可消灭板栗与乌龟，+100分)
+    // 子弹击杀敌人(火球可消灭板栗/乌龟/尖刺/飞行/食人花，+100分)
     for (const b of w.bullets){
       if (!b.alive) continue;
       for (const e of w.enemies){
         if (!e.alive || e.dead) continue;
-        const ebox = {x:e.x,y:e.y,w:e.w,h:e.h};
+        const ebox = e.type==='piranha' ? e.box : {x:e.x,y:e.y,w:e.w,h:e.h};
         if (aabb(b, ebox) && this.killEnemyByBullet(b)){
           e.dead=true; e.deadT=20; e.vx=0;
           this.addScore(100);
@@ -150,15 +169,24 @@ export class Game {
     return true;
   }
 
+  // 踩踏判定：goomba/flyer 踩扁；koopa 踩成壳/踢壳/停壳；spiny/piranha 不可踩(提前处理)
   stomp(e){
     const w=this.world;
     const s=this.sfx;
-    if (e.type==='goomba'){ e.dead=true; e.deadT=30; this.player.vy = -6; this.addScore(100); s.stomp(); }
-    else {
-      // koopa 踩成壳
-      if (e.shell){ /* 已在壳上，踢 */ e.kicked=true; e.kickVX = this.player.dir*6; this.addScore(200); }
-      else { e.shell=true; e.dead=false; this.player.vy=-6; this.addScore(100); s.stomp(); }
-      this.player.vy = -7;
+    if (e.type==='goomba' || e.type==='flyer'){
+      e.dead=true; e.deadT=30; this.player.vy=-6; this.addScore(100); s.stomp();
+    } else if (e.type==='koopa'){
+      if (e.shell){
+        // 已变壳：移动中→踩停；静止→踢出
+        if (e.kicked){
+          e.kicked=false; e.kickVX=0; this.player.vy=-6; this.addScore(100); s.stomp();
+        } else {
+          e.kicked=true; e.kickVX=this.player.dir*6; e.kickT=0; this.player.vy=-7; this.addScore(200); s.stomp();
+        }
+      } else {
+        // 踩龟变壳
+        e.shell=true; e.dead=false; this.player.vy=-7; this.addScore(100); s.stomp();
+      }
     }
   }
 

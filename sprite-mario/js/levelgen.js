@@ -7,6 +7,7 @@
  *   3 问号块(未用)
  *   4 已用问号块
  *   5 地板(ground, 特殊顶部纹理)
+ * 敌人类型：goomba 板栗仔 / koopa 乌龟 / spiny 尖刺龟(踩踏受伤) / flyer 红翼板栗(空中) / piranha 食人花(管道)
  */
 import { TILE } from './physics.js';
 
@@ -14,6 +15,18 @@ function createEmpty(w, h){
   const t = [];
   for (let y=0;y<h;y++){ t.push(new Array(w).fill(0)); }
   return t;
+}
+
+/* 按关卡难度选择敌人类型 */
+function pickEnemy(rng, levelNo){
+  const r = rng();
+  if (levelNo >= 2){
+    if (r < 0.42) return 'goomba';
+    if (r < 0.66) return 'koopa';
+    if (r < 0.85) return 'spiny';   // 尖刺龟：踩踏受伤
+    return 'flyer';                 // 红翼板栗：空中巡逻
+  }
+  return r < 0.6 ? 'goomba' : 'koopa';
 }
 
 /* 用 RNG 生成关卡。返回 { w,h,tiles, startX, spawns, sections } */
@@ -84,7 +97,7 @@ export function generateLevel(levelNo, seedStr){
         if (rng()<0.6 && x+platW < w-15){
           const kb = rng();
           if (kb<0.5) pushBlock(x+1,'?', rng()<0.7?'coin':'power');
-          else tiles[treeY(platY-1)>=0?platY-1:platY-1][x+2]=2;
+          else tiles[platY-1>=0?platY-1:platY-1][x+2]=2;
           x += platW;
         } else {
           x += platW + ri(1,3);
@@ -100,9 +113,15 @@ export function generateLevel(levelNo, seedStr){
         } else {
           x += segW;
         }
-        // 散落地面的敌人
+        // 散落地面的敌人（随难度混入尖刺龟/飞行板栗）
         const eg = Math.floor(enemyRate * rng()*4);
-        for (let i=0;i<eg;i++){ if (x+i*3 < w-16) spawns.push({x:x+i*2, y:tileY, type: rng()<0.7?'goomba':'koopa'}); x+=2; }
+        for (let i=0;i<eg;i++){
+          if (x+i*2 < w-16){
+            const type = pickEnemy(rng, levelNo);
+            spawns.push({x:x+i*2, y: (type==='flyer'? tileY-3 : tileY), type});
+          }
+          x+=2;
+        }
       }
     }
     else if (choice === 'blocks'){
@@ -125,6 +144,10 @@ export function generateLevel(levelNo, seedStr){
           tiles[tileY-py][x+px] = 1;
         }
       }
+      // 管道口食人花（还原原版要素：接近伸出攻击）
+      if (rng()<0.5){
+        spawns.push({x:x, y:tileY-(ph-1), type:'piranha'});
+      }
       // 管道口跳上来有宝
       if (rng()<0.5) pushBlock(x, '?', 'power');
       x += 2 + ri(1,3);
@@ -133,7 +156,10 @@ export function generateLevel(levelNo, seedStr){
       const eg = 1 + Math.floor(Math.min(enemyRate, 3) * rng()*3);
       for (let i=0;i<eg;i++){
         const ex = x+i*3;
-        if (ex < w-16) spawns.push({x:ex, y:tileY, type: rng()<0.65?'goomba':'koopa'});
+        if (ex < w-16){
+          const type = pickEnemy(rng, levelNo);
+          spawns.push({x:ex, y: (type==='flyer'? tileY-3 : tileY), type});
+        }
       }
       x += eg*3;
     }

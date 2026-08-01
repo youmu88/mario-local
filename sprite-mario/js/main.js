@@ -5,6 +5,7 @@ import { Input } from './input.js';
 import { AudioFX } from './audio.js';
 import { UI } from './ui.js';
 import { StartConfig } from './config.js';
+import { loadOfficialSprites } from './sprites.js';
 
 const renderer = new Renderer();
 const input = new Input();
@@ -32,6 +33,7 @@ function retry(){
 }
 
 function init(){
+  loadOfficialSprites();  // 异步加载官方马里奥主题精灵（加载后自动替换程序化精灵）
   ui = new UI((c)=>startGame(c), ()=>retry());
   game = new Game(renderer, input, sfx, (st)=>{
     if (st==='playing') ui.hideAll();

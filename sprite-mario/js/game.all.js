@@ -1,5 +1,5 @@
 /* ===== SUPER MARIO - 单文件构建版 (自动生成，避免 file:// 下 ES module CORS 黑屏) ===== */
-/* 来源: js/*.js (ES module) 合并去模块化，由 npm run build 重新生成。v1.3 长按大跳+场景层次+速度手感。 */
+/* 来源: js/*.js (ES module) 合并去模块化，由 npm run build 重新生成 */
 ;(function(){
 "use strict";
 
@@ -49,6 +49,7 @@ function saveStartConfig(){
 /* ===== 程序化像素精灵绘制（高精度重绘版） =====
  * 用字符画描述精灵，运行时在离屏 canvas 上渲染为高清纹理。
  * PX 在 config.js 中定义（当前=4，更高分辨率）。
+ * 另支持加载官方马里奥主题素材（assets/sprites/*.png）替换程序化精灵。
  */
 
 /* 简易像素字符画：'.'透明 其他=色板key */
@@ -109,6 +110,7 @@ const PAL = {
 };
 
 const SPRITES = {};
+window.__SPRITES = SPRITES;  // 调试钩子（与 __MARIO_DEBUG 同风格）
 
 /* ===== 小马里奥（面向右，经典红白配色） 16x20 ===== */
 SPRITES['mario_small'] = makeSprite([
@@ -184,6 +186,39 @@ SPRITES['goomba'] = makeSprite([
   '....gggggg....',
 ], PAL);
 
+/* ===== 板栗仔走路帧B（脚部交替） ===== */
+SPRITES['goomba_w2'] = makeSprite([
+  '....GGGGGG....',
+  '...GGGGGGGG...',
+  '..GGGGGGGGGG..',
+  '..GGgGGGGgGG..',
+  '..GGGGGGGGGG..',
+  '..GGKGGGGKGG..',
+  '..GGGGGGGGGG..',
+  '.GGGGGGGGGGGG.',
+  '.GGGGGGGGGGGG.',
+  '.GGGGgGGgGGGG.',
+  '.GGGGGGGGGGGG.',
+  '..GGGGGGGGGG..',
+  '....ggGGGG....',
+  '...ggggggg....',
+], PAL);
+
+/* ===== 板栗仔踩扁（压扁状） ===== */
+SPRITES['goomba_squash'] = makeSprite([
+  '..............',
+  '..............',
+  '..............',
+  '..............',
+  '..............',
+  '....GGGGGG....',
+  '...GGGGGGGG...',
+  '..GGGGGGGGGG..',
+  '..GGKGGGGKGG..',
+  '.GGGGGGGGGGGG.',
+  '..gggggggggg..',
+], PAL);
+
 /* ===== 乌龟 Koopa（面向右） 16x18 ===== */
 SPRITES['koopa'] = makeSprite([
   '......TTTT......',
@@ -205,6 +240,86 @@ SPRITES['koopa'] = makeSprite([
   '....TT....TT....',
   '....TT....TT....',
 ], PAL);
+
+/* ===== 乌龟走路帧B ===== */
+SPRITES['koopa_w2'] = makeSprite([
+  '......TTTT......',
+  '.....TTTTTT.....',
+  '....TTTTTTTT....',
+  '....TTTTTTTT....',
+  '....TTsTTTTs....',
+  '....TTTTTTTT....',
+  '....TTTTTTTT....',
+  '.....TTTTTT.....',
+  '....TTTTTTTT....',
+  '...TTTTTTTTTT...',
+  '..TTTTTTTTTTTT..',
+  '..TTTTTTTTTTTT..',
+  '..TTsTTTTTTsTT..',
+  '..TTTTTTTTTTTT..',
+  '..TTTTTTTTTTTT..',
+  '...TTTTTTTTTT...',
+  '.....TT..TT.....',
+  '.....TT..TT.....',
+], PAL);
+
+/* ===== 乌龟壳（静止） 14x10 ===== */
+SPRITES['koopa_shell'] = makeSprite([
+  '.....TTTTT.....',
+  '...TTTTTTTTT...',
+  '..TTTTTTTTTTT..',
+  '..TTTTTTTTTTT..',
+  '.TTtTTTTTTtTT..',
+  '.TTTTTTTTTTTT..',
+  '..TTTTTTTTTTT..',
+  '..TTTTTTTTTTT..',
+  '...TTTTTTTTT...',
+  '.....TTTTT.....',
+], PAL);
+
+/* ===== 食人花（程序化占位，会被官方素材替换） 14x18 ===== */
+SPRITES['piranha'] = makeSprite([
+  '.....TTTTT.....',
+  '....TTTTTTT....',
+  '...TTTTTTTTT...',
+  '..TTWWTTTWWTT..',
+  '..TTWWTTTWWTT..',
+  '..TTTTTTTTTTT..',
+  '...TTTTTTTTT...',
+  '...TTTTTTTTT...',
+  '....TTTTTTT....',
+  '....TTTTTTT....',
+  '.....TTTTT.....',
+  '.....TTTTT.....',
+  '.....TTTTT.....',
+  '.....TTTTT.....',
+  '.....TTTTT.....',
+  '.....TTTTT.....',
+  '.....TTTTT.....',
+  '.....TTTTT.....',
+], PAL);
+SPRITES['piranha_2'] = SPRITES['piranha'];
+
+/* ===== 尖刺龟 Spiny（程序化：红壳+白刺，踩踏受伤） 16x16 ===== */
+SPRITES['spiny'] = makeSprite([
+  '....WW..WW....',
+  '...W..WW..W...',
+  '..W..RRRR..W..',
+  '.W..RRRRRR..W.',
+  '....RRRRRR....',
+  '...RRWWRRWW...',
+  '..RRRRRRRRRR..',
+  '..RRKRRRRKRR..',
+  '..RRRRRRRRRR..',
+  '...RRRRRRRR...',
+  '...RgRRRRgR...',
+  '....RRRRRR....',
+  '.....RRRR.....',
+  '...RR....RR...',
+  '...RR....RR...',
+  '...RR....RR...',
+], PAL);
+SPRITES['spiny_w2'] = SPRITES['spiny'];
 
 /* ===== 蘑菇（红，变大道具） 16x16 ===== */
 SPRITES['mushroom'] = makeSprite([
@@ -397,6 +512,95 @@ SPRITES['castle'] = makeSprite([
   '.RRRRR.RRRRR..',
 ], PAL);
 
+/* ===== 动画帧占位（与静态帧同源，加载官方素材后替换） ===== */
+SPRITES['mario_small_run2'] = SPRITES['mario_small'];
+SPRITES['mario_small_run3'] = SPRITES['mario_small'];
+SPRITES['mario_small_run4'] = SPRITES['mario_small'];
+SPRITES['mario_small_jump'] = SPRITES['mario_small'];
+SPRITES['mario_big_run'] = SPRITES['mario_big'];
+
+/* ===== 官方马里奥主题素材（assets/sprites/*.png，异步加载后替换程序化精灵） =====
+ * 素材来源（本仓库 assets/sprites/ 目录）：
+ *  - mario_*.png : 任天堂《超级马里奥兄弟》NES 官方精灵提取（社区仓库 Hammania689/Super-Mario-Bros-1-1-in-Unity）
+ *  - goomba_*.png / koopa_*.png / piranha_*.png : 《Super Mario Maker》SMB1 主题官方素材提取（NostalgicMysticalCat/Super-Mario-Maker-Assets-Archive）
+ * 版权归 Nintendo 所有；仅供个人学习/自用项目，禁止商用分发。
+ */
+const OFFICIAL_URLS = {
+  mario_small:      'assets/sprites/mario_0.png',   // 站立
+  mario_small_run2: 'assets/sprites/mario_1.png',   // 跑1
+  mario_small_run3: 'assets/sprites/mario_2.png',   // 跑2
+  mario_small_run4: 'assets/sprites/mario_3.png',   // 跑3
+  mario_small_jump: 'assets/sprites/mario_4.png',   // 跳跃
+  mario_big:        'assets/sprites/mario_6.png',   // 大马里奥站
+  mario_big_run:    'assets/sprites/mario_7.png',   // 大马里奥跑
+  goomba:           'assets/sprites/goomba_0.png',  // 走路A
+  goomba_w2:        'assets/sprites/goomba_1.png',  // 走路B
+  goomba_squash:    'assets/sprites/goomba_4.png',  // 踩扁
+  koopa:            'assets/sprites/koopa_0.png',   // 走路A
+  koopa_w2:         'assets/sprites/koopa_1.png',   // 走路B
+  koopa_shell:      'assets/sprites/koopa_2.png',   // 壳
+  piranha:          'assets/sprites/piranha_0.png',
+  piranha_2:        'assets/sprites/piranha_1.png',
+};
+
+// 飞行敌人帧：在官方板栗仔上叠加红色翅膀
+function makeFlyerFrame(baseCanvas, wingFlip){
+  const c = document.createElement('canvas');
+  const wingW = 14;
+  c.width = baseCanvas.width + wingW;
+  c.height = Math.max(baseCanvas.height, 24);
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  // 翅膀（红，两段式小翼）
+  g.fillStyle = '#e83818';
+  if (wingFlip){
+    g.beginPath();
+    g.moveTo(c.width-2, 6); g.lineTo(c.width-10, 10); g.lineTo(c.width-2, 14);
+    g.closePath(); g.fill();
+    g.fillRect(c.width-12, 8, 5, 8);
+  } else {
+    g.beginPath();
+    g.moveTo(2, 6); g.lineTo(10, 10); g.lineTo(2, 14);
+    g.closePath(); g.fill();
+    g.fillRect(7, 8, 5, 8);
+  }
+  g.drawImage(baseCanvas, wingFlip? 0 : wingW, 0);
+  return c;
+}
+
+let officialLoaded = 0;
+const OFFICIAL_TOTAL = Object.keys(OFFICIAL_URLS).length;
+
+function loadOfficialSprite(key, url){
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    c.getContext('2d').drawImage(img, 0, 0);
+    SPRITES[key] = c;
+    officialLoaded++;
+    // 飞行帧：goomba + 翅膀（goomba 就绪后合成）
+    if (key==='goomba' || key==='goomba_w2'){
+      const target = key==='goomba' ? 'flyer' : 'flyer_w2';
+      SPRITES[target] = makeFlyerFrame(c, true);
+      SPRITES[target].__isFlyer = true;
+    }
+  };
+  img.onerror = () => { /* 加载失败保留程序化精灵兜底 */ };
+  img.src = url;
+}
+
+// 加载全部官方素材（main.js 启动时调用；加载完成后自动替换渲染精灵）
+function loadOfficialSprites(){
+  if (officialLoaded>0) return;   // 幂等
+  for (const k in OFFICIAL_URLS) loadOfficialSprite(k, OFFICIAL_URLS[k]);
+}
+
+// 是否已全部加载（供调试/测试）
+function officialSpritesReady(){
+  return officialLoaded >= OFFICIAL_TOTAL;
+}
+
 
 
 /* ===== physics.js ===== */
@@ -486,12 +690,25 @@ function moveY(body, tiles, hits) {
  *   3 问号块(未用)
  *   4 已用问号块
  *   5 地板(ground, 特殊顶部纹理)
+ * 敌人类型：goomba 板栗仔 / koopa 乌龟 / spiny 尖刺龟(踩踏受伤) / flyer 红翼板栗(空中) / piranha 食人花(管道)
  */
 
 function createEmpty(w, h){
   const t = [];
   for (let y=0;y<h;y++){ t.push(new Array(w).fill(0)); }
   return t;
+}
+
+/* 按关卡难度选择敌人类型 */
+function pickEnemy(rng, levelNo){
+  const r = rng();
+  if (levelNo >= 2){
+    if (r < 0.42) return 'goomba';
+    if (r < 0.66) return 'koopa';
+    if (r < 0.85) return 'spiny';   // 尖刺龟：踩踏受伤
+    return 'flyer';                 // 红翼板栗：空中巡逻
+  }
+  return r < 0.6 ? 'goomba' : 'koopa';
 }
 
 /* 用 RNG 生成关卡。返回 { w,h,tiles, startX, spawns, sections } */
@@ -562,7 +779,7 @@ function generateLevel(levelNo, seedStr){
         if (rng()<0.6 && x+platW < w-15){
           const kb = rng();
           if (kb<0.5) pushBlock(x+1,'?', rng()<0.7?'coin':'power');
-          else tiles[treeY(platY-1)>=0?platY-1:platY-1][x+2]=2;
+          else tiles[platY-1>=0?platY-1:platY-1][x+2]=2;
           x += platW;
         } else {
           x += platW + ri(1,3);
@@ -578,9 +795,15 @@ function generateLevel(levelNo, seedStr){
         } else {
           x += segW;
         }
-        // 散落地面的敌人
+        // 散落地面的敌人（随难度混入尖刺龟/飞行板栗）
         const eg = Math.floor(enemyRate * rng()*4);
-        for (let i=0;i<eg;i++){ if (x+i*3 < w-16) spawns.push({x:x+i*2, y:tileY, type: rng()<0.7?'goomba':'koopa'}); x+=2; }
+        for (let i=0;i<eg;i++){
+          if (x+i*2 < w-16){
+            const type = pickEnemy(rng, levelNo);
+            spawns.push({x:x+i*2, y: (type==='flyer'? tileY-3 : tileY), type});
+          }
+          x+=2;
+        }
       }
     }
     else if (choice === 'blocks'){
@@ -603,6 +826,10 @@ function generateLevel(levelNo, seedStr){
           tiles[tileY-py][x+px] = 1;
         }
       }
+      // 管道口食人花（还原原版要素：接近伸出攻击）
+      if (rng()<0.5){
+        spawns.push({x:x, y:tileY-(ph-1), type:'piranha'});
+      }
       // 管道口跳上来有宝
       if (rng()<0.5) pushBlock(x, '?', 'power');
       x += 2 + ri(1,3);
@@ -611,7 +838,10 @@ function generateLevel(levelNo, seedStr){
       const eg = 1 + Math.floor(Math.min(enemyRate, 3) * rng()*3);
       for (let i=0;i<eg;i++){
         const ex = x+i*3;
-        if (ex < w-16) spawns.push({x:ex, y:tileY, type: rng()<0.65?'goomba':'koopa'});
+        if (ex < w-16){
+          const type = pickEnemy(rng, levelNo);
+          spawns.push({x:ex, y: (type==='flyer'? tileY-3 : tileY), type});
+        }
       }
       x += eg*3;
     }
@@ -650,7 +880,14 @@ function treeY(y){ return y; }
 
 
 /* ===== entities.js ===== */
-/* ===== 世界实体：道具/敌人/子弹 ===== */
+/* ===== 世界实体：道具/敌人/子弹 =====
+ * 敌人类型：
+ *   goomba  板栗仔（可踩扁，火球/踢壳可消灭）
+ *   koopa   乌龟（可踩成壳，壳可踢出连杀/撞墙反弹）
+ *   spiny   尖刺龟（踩踏受伤，仅火球/踢壳可消灭）
+ *   flyer   红翼板栗（空中正弦巡逻，可踩扁，火球/踢壳可消灭）
+ *   piranha 食人花（管道伸缩攻击，不可踩，碰撞受伤）
+ */
 
 // 道具(蘑菇/花/星/1up)
 class PowerUp {
@@ -695,36 +932,56 @@ class Enemy {
   constructor(x,y,type){
     this.type=type;
     this.w=TILE; this.h=TILE;
-    if (type==='goomba'){}
-    else { this.h=TILE+4; } // koopa 略高
+    if (type==='koopa'){ this.h=TILE+4; } // koopa 略高
     this.x=x; this.y=y-this.h;
-    this.vx = type==='goomba'? -0.6 : -0.5;   // 敌人移动更慢
+    this.vx = (type==='goomba'||type==='spiny') ? -0.6 : (type==='flyer' ? -0.8 : -0.5);
     this.vy=0;
     this.dir = this.vx<0?-1:1;
     this.alive=true;
-    this.dead=false;         // 踩扁
+    this.dead=false;         // 被消灭(踩扁/击杀)
     this.deadT=0;
     this.shell=false;        // 乌龟变壳
-    this.kicked=false;
+    this.kicked=false;       // 壳被踢出
     this.kickVX=0;
-    this.walkT=0;
+    this.kickT=0;            // 踢出计时（刚踢出不伤玩家）
+    this.walkT=0;            // 动画计时
+    this.frame=0;            // 当前动画帧 0/1
+    this.baseY=this.y;       // flyer 飞行基准
+    this.phase=Math.random()*Math.PI*2;
   }
   update(world){
     if (this.dead){ this.deadT--; if (this.deadT<=0) this.alive=false; return; }
     if (this.shell){
-      // 壳：静止或被踢
-      this.x += this.kicked? this.kickVX : 0;
+      if (this.kicked){
+        this.kickT++;
+        // 撞墙反弹（踢出的壳在原版中撞墙会弹回）
+        if (this.worldSolidAhead(world)){ this.kickVX = -this.kickVX; }
+        this.x += this.kickVX;
+      }
       this.applyGravity(world);
+      return;
+    }
+    if (this.type==='flyer'){
+      // 飞行：正弦上下 + 水平巡逻（不落地、不坠坑）
+      this.phase += 0.06;
+      this.y = this.baseY + Math.sin(this.phase)*18;
+      this.walkT++;
+      this.frame = Math.floor(this.walkT/10)%2;
+      if (this.worldSolidAhead(world)){ this.vx=-this.vx; }
+      this.x += this.vx;
+      this.dir = this.vx<0?-1:1;
       return;
     }
     // 正常移动
     this.applyGravity(world);
     this.walkT++;
+    this.frame = Math.floor(this.walkT/10)%2;
     // 碰墙/边缘
     const ahead = this.worldSolidAhead(world);
     const edge = this.noEdgeAhead(world);
     if ((ahead || !edge) && !this.inAir(world)) this.vx=-this.vx;
     this.x += this.vx;
+    this.dir = this.vx<0?-1:1;
   }
   inAir(world){ const gy=world.groundY*TILE-this.h; return Math.abs((this.y)-gy)>2; }
   applyGravity(world){ this.vy+=0.5; this.y+=this.vy; const gy=world.groundY*TILE-this.h; if(this.y>=gy){this.y=gy;this.vy=0; } }
@@ -741,10 +998,53 @@ class Enemy {
   }
 }
 
+// 食人花：从管道伸缩攻击（不可踩，碰撞受伤）
+class Piranha {
+  constructor(x,y,pipeTopY){
+    this.type='piranha';
+    this.w=TILE; this.h=TILE;
+    this.x=x; this.y=pipeTopY;      // y = 花头顶部位置（初始缩在管道口）
+    this.pipeTopY=pipeTopY;         // 缩回基准（管道口顶面）
+    this.maxExtend=TILE*1.5;        // 最大伸出高度
+    this.phase='hidden';            // hidden|rising|up|falling
+    this.phaseT=0;
+    this.alive=true; this.dead=false;
+    this.dir=-1; this.vx=0; this.vy=0;
+    this.walkT=0; this.frame=0;
+  }
+  // 碰撞盒：花头（仅伸出明显时有效；未伸出则无碰撞）
+  get box(){
+    const out = this.pipeTopY - this.y;   // 当前伸出量
+    if (out < 10) return { x:this.x, y:this.y, w:0, h:0 };
+    return { x:this.x+2, y:this.y, w:this.w-4, h:Math.min(out+10, 42) };
+  }
+  update(world){
+    this.walkT++;
+    this.frame = Math.floor(this.walkT/8)%2;   // 花头张合动画
+    const player = world.player;
+    const dist = player ? Math.abs((player.x+player.w/2) - (this.x+this.w/2)) : 999;
+    if (this.phase==='hidden'){
+      if (dist < 5*TILE){ this.phase='rising'; this.phaseT=0; }
+      this.y = this.pipeTopY;
+    } else if (this.phase==='rising'){
+      this.phaseT++;
+      this.y = this.pipeTopY - this.maxExtend * Math.min(1, this.phaseT/22);
+      if (this.phaseT>=22){ this.phase='up'; this.phaseT=0; }
+    } else if (this.phase==='up'){
+      this.phaseT++;
+      if (dist > 6.5*TILE || this.phaseT>110){ this.phase='falling'; this.phaseT=0; }
+    } else { // falling
+      this.phaseT++;
+      this.y = this.pipeTopY - this.maxExtend * Math.max(0, 1 - this.phaseT/18);
+      if (this.phaseT>=18){ this.phase='hidden'; this.y=this.pipeTopY; }
+    }
+  }
+}
+
 // 敌人工厂
 function makeEnemy(x,y,type){
-  if (type==='koopa') return new Enemy(x,y,'koopa');
-  return new Enemy(x,y,'goomba');
+  if (type==='piranha') return new Piranha(x, y, y);   // y = 管道顶面像素
+  return new Enemy(x,y,type);
 }
 
 // 子弹(火球)
@@ -983,7 +1283,7 @@ class Player {
 
 
 /* ===== render.js ===== */
-/* ===== 渲染引擎：画布绘制 ===== */
+/* ===== 渲染引擎：画布绘制（支持动画帧/新敌人类型） ===== */
 
 
 class Renderer {
@@ -1045,7 +1345,7 @@ class Renderer {
 
     // 道具（逻辑1格高）
     for (const p of world.powerups) this.drawSprite(ctx, spriteFor(p.type), p.x-camX, p.y, {fit:TILE});
-    // 敌人
+    // 敌人（动画帧）
     for (const e of world.enemies) if(e.alive||e.deadT>0) this.drawEnemy(ctx,e,camX);
     // 子弹（逻辑约半格）
     for (const b of world.bullets) if(b.alive) this.drawSprite(ctx, SPRITES.fireball, b.x-camX, b.y, {fit:14});
@@ -1088,20 +1388,58 @@ class Renderer {
     ctx.fillStyle='#ffd800';ctx.fillRect(fx-1,top-4,18,16);
   }
 
+  // 敌人渲染：动画帧交替（走/爬）、踩扁帧、壳、食人花/尖刺龟/飞行
   drawEnemy(ctx,e,camX){
     const px=e.x-camX;
-    if(e.dead){ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y+e.h-6,e.w,6);return;}
-    if(e.shell){ctx.fillStyle='#7ce82a';ctx.fillRect(px+1,e.y+3,e.w-2,e.h-4);return;}
-    const spr=e.type==='goomba'?SPRITES.goomba:SPRITES.koopa;
-    this.drawSprite(ctx,spr,px,e.y,{flip:e.vx<0, fit:TILE});
+    const flip = (e.dir!==undefined && e.dir<0);
+    // 食人花（管道伸缩，张合动画）
+    if (e.type==='piranha'){
+      const spr = e.frame ? SPRITES.piranha_2 : SPRITES.piranha;
+      if (spr) this.drawSprite(ctx, spr, px, e.y, {fit:TILE});
+      else { ctx.fillStyle='#2f9a4a'; ctx.fillRect(px,e.y,TILE,TILE); }
+      return;
+    }
+    // 被消灭：压扁形态
+    if(e.dead){
+      const spr = e.type==='koopa' ? SPRITES.koopa_shell : SPRITES.goomba_squash;
+      if (spr) this.drawSprite(ctx, spr, px, e.y + e.h - 12, {flip, fit:12});
+      else { ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y+e.h-6,e.w,6); }
+      return;
+    }
+    // 乌龟壳
+    if(e.shell){
+      this.drawSprite(ctx, SPRITES.koopa_shell, px, e.y+2, {fit:TILE-6});
+      return;
+    }
+    // 走路/爬行动画帧
+    let spr;
+    if (e.type==='spiny'){ spr = e.frame ? SPRITES.spiny_w2 : SPRITES.spiny; }
+    else if (e.type==='flyer'){ spr = e.frame ? SPRITES.flyer_w2 : SPRITES.flyer; }
+    else if (e.type==='goomba'){ spr = e.frame ? SPRITES.goomba_w2 : SPRITES.goomba; }
+    else { spr = e.frame ? SPRITES.koopa_w2 : SPRITES.koopa; }
+    if (spr) this.drawSprite(ctx, spr, px, e.y, {flip, fit:TILE});
+    else { ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y,e.w,e.h); }
   }
 
-  // 玩家(由上层调用)
+  // 玩家（站/跑/跳动画帧，按方向翻转）
   drawPlayer(player, camX, dying){
     const ctx=this.ctx;
     ctx.save();ctx.translate(this.offX,this.offY);ctx.scale(this.scale,this.scale);
     const sx=player.x-camX;
-    let spr = player.fire&&!player.small ? SPRITES.mario_fire : (player.small?SPRITES.mario_small:SPRITES.mario_big);
+    let spr;
+    if (player.small){
+      if (!player.onGround){ spr = SPRITES.mario_small_jump; }
+      else if (Math.abs(player.vx)>0.1){
+        const r = Math.floor(player.frames/5)%4;
+        spr = r===0 ? SPRITES.mario_small
+          : (r===1 ? SPRITES.mario_small_run2
+          : (r===2 ? SPRITES.mario_small_run3 : SPRITES.mario_small_run4));
+      } else spr = SPRITES.mario_small;
+    } else {
+      if (!player.onGround){ spr = SPRITES.mario_big; }
+      else if (Math.abs(player.vx)>0.1){ spr = Math.floor(player.frames/7)%2 ? SPRITES.mario_big_run : SPRITES.mario_big; }
+      else spr = SPRITES.mario_big;
+    }
     if(!spr) spr = SPRITES.mario_small;
     const flicker = player.hurtFlashT>0 && Math.floor(player.hurtFlashT/6)%2===0;
     ctx.globalAlpha = flicker?0.5:1;
@@ -1373,6 +1711,7 @@ class Game {
     this.world = new World(this.levelNo, seed, this.cfg);
     this.world.score = this.score;
     this.player = new Player(this.world, { startBig: keepBig, startFire: keepFire, invincible: this.cfg.invincible });
+    this.world.player = this.player;   // 挂载玩家引用（食人花等需要感知玩家位置）
     this.player.score = this.score;
     this.player.lives = this.lives;
     this.state = 'playing';
@@ -1407,7 +1746,7 @@ class Game {
     const w = this.world;
     // 道具
     for (const p of w.powerups){ if (p.alive) p.update(w); }
-    // 敌人
+    // 敌人（含食人花/尖刺龟/飞行敌人）
     for (const e of w.enemies){ if (e.alive) e.update(w); }
     // 子弹
     for (const b of w.bullets){ if (b.alive) b.update(w); }
@@ -1441,25 +1780,43 @@ class Game {
     // 与敌人
     for (const e of w.enemies){
       if (!e.alive || e.dead) continue;
-      const ebox = {x:e.x,y:e.y,w:e.w,h:e.h};
+      const ebox = e.type==='piranha' ? e.box : {x:e.x,y:e.y,w:e.w,h:e.h};
       if (!aabb(pa, ebox)) continue;
-      // 踩踏判断(下落且脚在敌上方)
-      const stomping = p.vy>0 && (p.y + p.h - e.y) < 14;
+      const stomping = p.vy>0 && (p.y + p.h - e.y) < 16;
       if (stomping){
-        this.stomp(e);
+        // 可踩：goomba/koopa/flyer；不可踩：piranha(花)/spiny(尖刺，踩踏受伤)
+        if (e.type==='piranha' || e.type==='spiny'){
+          if (p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+        } else {
+          this.stomp(e);
+        }
       } else {
-        // 被碰
-        if (p.starT<=0 && p.hurtFlashT<=0){
-          this.hurtPlayer();
+        // 侧面碰撞
+        if (e.type==='koopa' && e.shell && e.kicked){
+          // 被踢出的壳撞到玩家：刚踢出瞬间不伤，之后受伤（原版行为）
+          if (e.kickT > 10 && p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+          continue;
+        }
+        if (p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+      }
+    }
+    // 踢出的壳击杀其他敌人（撞墙反弹连杀）
+    for (const k of w.enemies){
+      if (!k.alive || !k.shell || !k.kicked) continue;
+      for (const e of w.enemies){
+        if (e===k || !e.alive || e.dead || e.shell) continue;
+        if (aabb({x:k.x,y:k.y,w:k.w,h:k.h},{x:e.x,y:e.y,w:e.w,h:e.h})){
+          e.dead=true; e.deadT=20; e.vx=0;
+          this.addScore(200); this.sfx.stomp();
         }
       }
     }
-    // 子弹击杀敌人(火球可消灭板栗与乌龟，+100分)
+    // 子弹击杀敌人(火球可消灭板栗/乌龟/尖刺/飞行/食人花，+100分)
     for (const b of w.bullets){
       if (!b.alive) continue;
       for (const e of w.enemies){
         if (!e.alive || e.dead) continue;
-        const ebox = {x:e.x,y:e.y,w:e.w,h:e.h};
+        const ebox = e.type==='piranha' ? e.box : {x:e.x,y:e.y,w:e.w,h:e.h};
         if (aabb(b, ebox) && this.killEnemyByBullet(b)){
           e.dead=true; e.deadT=20; e.vx=0;
           this.addScore(100);
@@ -1481,15 +1838,24 @@ class Game {
     return true;
   }
 
+  // 踩踏判定：goomba/flyer 踩扁；koopa 踩成壳/踢壳/停壳；spiny/piranha 不可踩(提前处理)
   stomp(e){
     const w=this.world;
     const s=this.sfx;
-    if (e.type==='goomba'){ e.dead=true; e.deadT=30; this.player.vy = -6; this.addScore(100); s.stomp(); }
-    else {
-      // koopa 踩成壳
-      if (e.shell){ /* 已在壳上，踢 */ e.kicked=true; e.kickVX = this.player.dir*6; this.addScore(200); }
-      else { e.shell=true; e.dead=false; this.player.vy=-6; this.addScore(100); s.stomp(); }
-      this.player.vy = -7;
+    if (e.type==='goomba' || e.type==='flyer'){
+      e.dead=true; e.deadT=30; this.player.vy=-6; this.addScore(100); s.stomp();
+    } else if (e.type==='koopa'){
+      if (e.shell){
+        // 已变壳：移动中→踩停；静止→踢出
+        if (e.kicked){
+          e.kicked=false; e.kickVX=0; this.player.vy=-6; this.addScore(100); s.stomp();
+        } else {
+          e.kicked=true; e.kickVX=this.player.dir*6; e.kickT=0; this.player.vy=-7; this.addScore(200); s.stomp();
+        }
+      } else {
+        // 踩龟变壳
+        e.shell=true; e.dead=false; this.player.vy=-7; this.addScore(100); s.stomp();
+      }
     }
   }
 
@@ -1670,6 +2036,7 @@ class UI {
 
 
 
+
 const renderer = new Renderer();
 const input = new Input();
 const sfx = new AudioFX();
@@ -1696,6 +2063,7 @@ function retry(){
 }
 
 function init(){
+  loadOfficialSprites();  // 异步加载官方马里奥主题精灵（加载后自动替换程序化精灵）
   ui = new UI((c)=>startGame(c), ()=>retry());
   game = new Game(renderer, input, sfx, (st)=>{
     if (st==='playing') ui.hideAll();

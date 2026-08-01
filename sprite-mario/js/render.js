@@ -1,4 +1,4 @@
-/* ===== 渲染引擎：画布绘制 ===== */
+/* ===== 渲染引擎：画布绘制（支持动画帧/新敌人类型） ===== */
 import { SPRITES } from './sprites.js';
 import { TILE } from './physics.js';
 
@@ -61,7 +61,7 @@ export class Renderer {
 
     // 道具（逻辑1格高）
     for (const p of world.powerups) this.drawSprite(ctx, spriteFor(p.type), p.x-camX, p.y, {fit:TILE});
-    // 敌人
+    // 敌人（动画帧）
     for (const e of world.enemies) if(e.alive||e.deadT>0) this.drawEnemy(ctx,e,camX);
     // 子弹（逻辑约半格）
     for (const b of world.bullets) if(b.alive) this.drawSprite(ctx, SPRITES.fireball, b.x-camX, b.y, {fit:14});
@@ -104,20 +104,58 @@ export class Renderer {
     ctx.fillStyle='#ffd800';ctx.fillRect(fx-1,top-4,18,16);
   }
 
+  // 敌人渲染：动画帧交替（走/爬）、踩扁帧、壳、食人花/尖刺龟/飞行
   drawEnemy(ctx,e,camX){
     const px=e.x-camX;
-    if(e.dead){ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y+e.h-6,e.w,6);return;}
-    if(e.shell){ctx.fillStyle='#7ce82a';ctx.fillRect(px+1,e.y+3,e.w-2,e.h-4);return;}
-    const spr=e.type==='goomba'?SPRITES.goomba:SPRITES.koopa;
-    this.drawSprite(ctx,spr,px,e.y,{flip:e.vx<0, fit:TILE});
+    const flip = (e.dir!==undefined && e.dir<0);
+    // 食人花（管道伸缩，张合动画）
+    if (e.type==='piranha'){
+      const spr = e.frame ? SPRITES.piranha_2 : SPRITES.piranha;
+      if (spr) this.drawSprite(ctx, spr, px, e.y, {fit:TILE});
+      else { ctx.fillStyle='#2f9a4a'; ctx.fillRect(px,e.y,TILE,TILE); }
+      return;
+    }
+    // 被消灭：压扁形态
+    if(e.dead){
+      const spr = e.type==='koopa' ? SPRITES.koopa_shell : SPRITES.goomba_squash;
+      if (spr) this.drawSprite(ctx, spr, px, e.y + e.h - 12, {flip, fit:12});
+      else { ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y+e.h-6,e.w,6); }
+      return;
+    }
+    // 乌龟壳
+    if(e.shell){
+      this.drawSprite(ctx, SPRITES.koopa_shell, px, e.y+2, {fit:TILE-6});
+      return;
+    }
+    // 走路/爬行动画帧
+    let spr;
+    if (e.type==='spiny'){ spr = e.frame ? SPRITES.spiny_w2 : SPRITES.spiny; }
+    else if (e.type==='flyer'){ spr = e.frame ? SPRITES.flyer_w2 : SPRITES.flyer; }
+    else if (e.type==='goomba'){ spr = e.frame ? SPRITES.goomba_w2 : SPRITES.goomba; }
+    else { spr = e.frame ? SPRITES.koopa_w2 : SPRITES.koopa; }
+    if (spr) this.drawSprite(ctx, spr, px, e.y, {flip, fit:TILE});
+    else { ctx.fillStyle='#8a5224';ctx.fillRect(px,e.y,e.w,e.h); }
   }
 
-  // 玩家(由上层调用)
+  // 玩家（站/跑/跳动画帧，按方向翻转）
   drawPlayer(player, camX, dying){
     const ctx=this.ctx;
     ctx.save();ctx.translate(this.offX,this.offY);ctx.scale(this.scale,this.scale);
     const sx=player.x-camX;
-    let spr = player.fire&&!player.small ? SPRITES.mario_fire : (player.small?SPRITES.mario_small:SPRITES.mario_big);
+    let spr;
+    if (player.small){
+      if (!player.onGround){ spr = SPRITES.mario_small_jump; }
+      else if (Math.abs(player.vx)>0.1){
+        const r = Math.floor(player.frames/5)%4;
+        spr = r===0 ? SPRITES.mario_small
+          : (r===1 ? SPRITES.mario_small_run2
+          : (r===2 ? SPRITES.mario_small_run3 : SPRITES.mario_small_run4));
+      } else spr = SPRITES.mario_small;
+    } else {
+      if (!player.onGround){ spr = SPRITES.mario_big; }
+      else if (Math.abs(player.vx)>0.1){ spr = Math.floor(player.frames/7)%2 ? SPRITES.mario_big_run : SPRITES.mario_big; }
+      else spr = SPRITES.mario_big;
+    }
     if(!spr) spr = SPRITES.mario_small;
     const flicker = player.hurtFlashT>0 && Math.floor(player.hurtFlashT/6)%2===0;
     ctx.globalAlpha = flicker?0.5:1;

@@ -1183,6 +1183,8 @@ class World {
     this.usedBlocks = [];   // {x,y}
     this.smashed = [];      // 可碎砖被撞碎动画
     this.flagReached = false;
+    this.flagSlide = 0;   // 过关旗子下滑进度 0→1
+    this.flagDone = false;
     this.time = 300;
     this.complete = false;
     this.startCfg = startCfg;
@@ -1262,6 +1264,8 @@ class Player {
     this.hurtFlashT=0;    // 受伤闪烁(无敌时间)
     this.respawnInvT=0;   // 复活无敌计时(5秒，期间不受伤害)
     this.frames=0;
+    this.clearMode=null;   // 过关动画: null | 'slide'(沿旗杆滑下) | 'walk'(走向城堡)
+    this.cleared=false;    // 已走进城堡(渲染隐藏)
   }
 
   setSize(){
@@ -1286,6 +1290,23 @@ class Player {
       this.vy+=0.5; this.y+=this.vy;
       this.dieT--;
       if (this.dieT<=0) this.alive=false;
+      return;
+    }
+
+    // 过关动画：不受输入控制（沿杆滑下 → 自动走向城堡）
+    if (this.clearMode){
+      if (this.clearMode==='slide'){
+        this.vx=0; this.vy=0;
+        this.y += 2.6;   // 沿杆下滑
+        const ground = this.world.groundY*TILE - this.h;
+        if (this.y >= ground){ this.y = ground; this.clearMode='walk'; }
+      } else if (this.clearMode==='walk'){
+        this.dir = 1;
+        this.vx = CFG_.RUN_SPEED;
+        this.x += this.vx;
+        this.onGround = true;
+        if (this.x >= this.world.flagX*TILE + 4.5*TILE) this.cleared = true;  // 走进城堡
+      }
       return;
     }
 
@@ -1434,8 +1455,9 @@ class Renderer {
         this.drawTile(ctx,t,px,py);
       }
     }
-    // 旗杆
+    // 旗杆 + 终点城堡
     this.drawFlag(ctx, world, camX);
+    this.drawCastle(ctx, world, camX);
 
     // 道具（逻辑1格高）
     for (const p of world.powerups) this.drawSprite(ctx, spriteFor(p.type), p.x-camX, p.y, {fit:TILE});
@@ -1479,7 +1501,34 @@ class Renderer {
   drawFlag(ctx,world,camX){
     const fx=world.flagX*TILE+16-camX, base=world.groundY*TILE, top=base-6*TILE;
     ctx.fillStyle='#2a1200';ctx.fillRect(fx-2,top,4,base-top+40);
-    ctx.fillStyle='#ffd800';ctx.fillRect(fx-1,top-4,18,16);
+    // 旗子：绿色三角旗，过关时从杆顶滑到底（world.flagSlide 0→1）
+    const slide = world.flagSlide || 0;
+    const fy = top + slide*(base-top-20);
+    ctx.fillStyle='#3fae5a';ctx.strokeStyle='#1d5a2a';ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(fx+2, fy);
+    ctx.lineTo(fx+24, fy+10);
+    ctx.lineTo(fx+2, fy+20);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+  }
+
+  // 终点城堡：旗杆右侧，玩家过关后走向城堡门
+  drawCastle(ctx,world,camX){
+    const base=world.groundY*TILE;
+    const cx=(world.flagX+5)*TILE - camX;
+    if (cx < -160 || cx > 680) return;
+    const bw=4*TILE, bh=5*TILE, y0=base-bh;
+    ctx.fillStyle='#c85a1e';
+    ctx.fillRect(cx,y0,bw,bh);
+    ctx.strokeStyle='#7a3a10';ctx.lineWidth=2;
+    for(let row=1;row<5;row++){ctx.beginPath();ctx.moveTo(cx,y0+row*TILE);ctx.lineTo(cx+bw,y0+row*TILE);ctx.stroke();}
+    for(let col=1;col<4;col++){ctx.beginPath();ctx.moveTo(cx+col*TILE,y0);ctx.lineTo(cx+col*TILE,base);ctx.stroke();}
+    // 城齿
+    for(let i=0;i<4;i++) ctx.fillRect(cx+i*TILE+2, y0-TILE, TILE-4, TILE+2);
+    // 门洞 + 门楣
+    ctx.fillStyle='#1a0a00';ctx.fillRect(cx+TILE*1.1, base-2.3*TILE, TILE*1.8, 2.3*TILE);
+    ctx.fillStyle='#e8b84a';ctx.fillRect(cx+TILE*0.9, base-2.5*TILE, TILE*2.2, 6);
   }
 
   // 敌人渲染：动画帧交替（走/爬）、踩扁帧、壳、食人花/尖刺龟/飞行
@@ -1526,7 +1575,10 @@ class Renderer {
     ctx.save();ctx.translate(this.offX,this.offY);ctx.scale(this.scale,this.scale);
     const sx=player.x-camX;
     let spr;
-    if (player.small){
+    if (player.clearMode==='slide'){
+      // 抓杆姿态：面向旗杆贴杆（使用站立帧）
+      spr = player.small ? SPRITES.mario_small : SPRITES.mario_big;
+    } else if (player.small){
       if (!player.onGround){ spr = SPRITES.mario_small_jump; }
       else if (Math.abs(player.vx)>0.1){
         // 跑步动画只循环跑步帧(run2/3/4)，不插入站立帧，避免跑动中“一步一顿”
@@ -1845,6 +1897,7 @@ class Game {
       this.updateCamera();
       // 分数同步
       this.score = this.player.score;
+      if (this.state==='clear') this.updateClear(dt);   // 过关动画 + 自动倒计时跳关
     } else if (this.state==='dying'){
       this.updatePlayer();
       if (!this.player.alive){
@@ -1874,7 +1927,7 @@ class Game {
 
   updatePlayer(){
     if (!this.player.alive && this.state==='playing'){ this.state='dying'; this.onStateChange('dying', this); return; }
-    if (this.player.alive && this.state==='playing') this.player.update(this.input, this.sfx);
+    if (this.state==='playing' || this.state==='clear') this.player.update(this.input, this.sfx);
     else if (this.state==='dying') this.player.update(this.input, this.sfx);
   }
 
@@ -1998,9 +2051,42 @@ class Game {
     this.world.flagReached = true;
     this.sfx.flag();
     this.addScore(1000);
+    const p=this.player;
+    // 玩家抓旗：x 对齐旗杆左侧，进入滑旗动画；旗子从杆顶滑下
+    p.clearMode='slide';
+    p.vx=0; p.vy=0; p.dir=-1;                 // 面向旗杆
+    p.x = this.world.flagX*TILE + 6;          // 贴杆
+    this.world.flagSlide = 0;
     this.state='clear';
-    this.clearT=0;
-    this.onStateChange('clear', this);  // 通知 UI 显示过关界面（此前发 hud 导致无入口卡死）
+    this.clearT=0; this.animDone=false; this.resultT=0;
+    // 不再立即弹过关界面：动画完成(走进城堡)后由 updateClear 发出 onStateChange('clear')
+  }
+
+  // 过关动画推进：旗子下滑(1.2s) + 玩家滑旗/走城堡；完成后显示 COURSE CLEAR 并自动倒计时跳关
+  updateClear(dt){
+    const w=this.world, p=this.player;
+    this.clearT += dt;
+    if (!w.flagDone){ w.flagSlide = Math.min(1, this.clearT/1.2); if (w.flagSlide>=1) w.flagDone=true; }
+    if (!this.animDone){
+      if (p.cleared){                          // 玩家已走进城堡
+        this.animDone = true;
+        this.resultT = 0;
+        this.onStateChange('clear', this);     // 此时才显示 COURSE CLEAR 覆盖层
+      }
+    } else {
+      this.resultT += dt;
+      if (this.resultT >= 5) this.nextLevel(); // 自动倒计时跳关
+    }
+  }
+
+  // 剩余自动跳关秒数（供 UI 按钮倒计时显示）
+  get clearRemain(){ return Math.max(0, Math.ceil(5 - (this.resultT||0))); }
+
+  nextLevel(){
+    this.levelNo++;
+    this.animDone=false; this.resultT=0;
+    if (this.player) this.player.clearMode=null;
+    this.startLevel({...this.cfg});
   }
 
   updateCamera(){
@@ -2128,14 +2214,22 @@ class UI {
     const btn = s.querySelector('.primary-btn');
     if (type==='gameover') btn.addEventListener('click', ()=>this.showMenu());
     else btn.addEventListener('click', ()=>this.onRetry());
-    // clear 界面常驻直至点击"继续下一关"（不自动移除按钮，避免无入口卡死）
+    // clear 界面：按钮显示自动跳关倒计时（可点击立即进入下一关；倒计时结束 game 自动跳关）
     if (type==='clear'){
+      const upd = ()=>{
+        const r = game.clearRemain || 0;
+        btn.textContent = `${btnText} (${r})`;
+        if (r<=0){ clearInterval(this.clearTimer); this.clearTimer=null; }
+      };
+      upd();
+      this.clearTimer = setInterval(upd, 500);
       setTimeout(()=>{ document.getElementById('touch-controls').classList.remove('hidden'); }, 400);
     }
   }
 
   /* 返回菜单时清理覆盖层 */
   hideAll(){
+    if (this.clearTimer){ clearInterval(this.clearTimer); this.clearTimer=null; }
     this.overlay.innerHTML = '';
   }
 }

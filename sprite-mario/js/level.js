@@ -36,6 +36,8 @@ export class World {
     this.usedBlocks = [];   // {x,y}
     this.smashed = [];      // 可碎砖被撞碎动画
     this.flagReached = false;
+    this.flagSlide = 0;   // 过关旗子下滑进度 0→1
+    this.flagDone = false;
     this.time = 300;
     this.complete = false;
     this.startCfg = startCfg;

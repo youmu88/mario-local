@@ -70,6 +70,7 @@ export class Game {
       this.updateCamera();
       // 分数同步
       this.score = this.player.score;
+      if (this.state==='clear') this.updateClear(dt);   // 过关动画 + 自动倒计时跳关
     } else if (this.state==='dying'){
       this.updatePlayer();
       if (!this.player.alive){
@@ -99,7 +100,7 @@ export class Game {
 
   updatePlayer(){
     if (!this.player.alive && this.state==='playing'){ this.state='dying'; this.onStateChange('dying', this); return; }
-    if (this.player.alive && this.state==='playing') this.player.update(this.input, this.sfx);
+    if (this.state==='playing' || this.state==='clear') this.player.update(this.input, this.sfx);
     else if (this.state==='dying') this.player.update(this.input, this.sfx);
   }
 
@@ -223,9 +224,42 @@ export class Game {
     this.world.flagReached = true;
     this.sfx.flag();
     this.addScore(1000);
+    const p=this.player;
+    // 玩家抓旗：x 对齐旗杆左侧，进入滑旗动画；旗子从杆顶滑下
+    p.clearMode='slide';
+    p.vx=0; p.vy=0; p.dir=-1;                 // 面向旗杆
+    p.x = this.world.flagX*TILE + 6;          // 贴杆
+    this.world.flagSlide = 0;
     this.state='clear';
-    this.clearT=0;
-    this.onStateChange('clear', this);  // 通知 UI 显示过关界面（此前发 hud 导致无入口卡死）
+    this.clearT=0; this.animDone=false; this.resultT=0;
+    // 不再立即弹过关界面：动画完成(走进城堡)后由 updateClear 发出 onStateChange('clear')
+  }
+
+  // 过关动画推进：旗子下滑(1.2s) + 玩家滑旗/走城堡；完成后显示 COURSE CLEAR 并自动倒计时跳关
+  updateClear(dt){
+    const w=this.world, p=this.player;
+    this.clearT += dt;
+    if (!w.flagDone){ w.flagSlide = Math.min(1, this.clearT/1.2); if (w.flagSlide>=1) w.flagDone=true; }
+    if (!this.animDone){
+      if (p.cleared){                          // 玩家已走进城堡
+        this.animDone = true;
+        this.resultT = 0;
+        this.onStateChange('clear', this);     // 此时才显示 COURSE CLEAR 覆盖层
+      }
+    } else {
+      this.resultT += dt;
+      if (this.resultT >= 5) this.nextLevel(); // 自动倒计时跳关
+    }
+  }
+
+  // 剩余自动跳关秒数（供 UI 按钮倒计时显示）
+  get clearRemain(){ return Math.max(0, Math.ceil(5 - (this.resultT||0))); }
+
+  nextLevel(){
+    this.levelNo++;
+    this.animDone=false; this.resultT=0;
+    if (this.player) this.player.clearMode=null;
+    this.startLevel({...this.cfg});
   }
 
   updateCamera(){

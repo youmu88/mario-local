@@ -97,14 +97,22 @@ export class UI {
     const btn = s.querySelector('.primary-btn');
     if (type==='gameover') btn.addEventListener('click', ()=>this.showMenu());
     else btn.addEventListener('click', ()=>this.onRetry());
-    // clear 界面常驻直至点击"继续下一关"（不自动移除按钮，避免无入口卡死）
+    // clear 界面：按钮显示自动跳关倒计时（可点击立即进入下一关；倒计时结束 game 自动跳关）
     if (type==='clear'){
+      const upd = ()=>{
+        const r = game.clearRemain || 0;
+        btn.textContent = `${btnText} (${r})`;
+        if (r<=0){ clearInterval(this.clearTimer); this.clearTimer=null; }
+      };
+      upd();
+      this.clearTimer = setInterval(upd, 500);
       setTimeout(()=>{ document.getElementById('touch-controls').classList.remove('hidden'); }, 400);
     }
   }
 
   /* 返回菜单时清理覆盖层 */
   hideAll(){
+    if (this.clearTimer){ clearInterval(this.clearTimer); this.clearTimer=null; }
     this.overlay.innerHTML = '';
   }
 }

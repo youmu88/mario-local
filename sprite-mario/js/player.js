@@ -30,6 +30,8 @@ export class Player {
     this.hurtFlashT=0;    // 受伤闪烁(无敌时间)
     this.respawnInvT=0;   // 复活无敌计时(5秒，期间不受伤害)
     this.frames=0;
+    this.clearMode=null;   // 过关动画: null | 'slide'(沿旗杆滑下) | 'walk'(走向城堡)
+    this.cleared=false;    // 已走进城堡(渲染隐藏)
   }
 
   setSize(){
@@ -54,6 +56,23 @@ export class Player {
       this.vy+=0.5; this.y+=this.vy;
       this.dieT--;
       if (this.dieT<=0) this.alive=false;
+      return;
+    }
+
+    // 过关动画：不受输入控制（沿杆滑下 → 自动走向城堡）
+    if (this.clearMode){
+      if (this.clearMode==='slide'){
+        this.vx=0; this.vy=0;
+        this.y += 2.6;   // 沿杆下滑
+        const ground = this.world.groundY*TILE - this.h;
+        if (this.y >= ground){ this.y = ground; this.clearMode='walk'; }
+      } else if (this.clearMode==='walk'){
+        this.dir = 1;
+        this.vx = CFG_.RUN_SPEED;
+        this.x += this.vx;
+        this.onGround = true;
+        if (this.x >= this.world.flagX*TILE + 4.5*TILE) this.cleared = true;  // 走进城堡
+      }
       return;
     }
 

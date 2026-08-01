@@ -379,6 +379,26 @@ SPRITES['mushroom'] = makeSprite([
   '....EEEEEEEE....',
 ], PAL);
 
+/* ===== 1up 绿蘑菇（加命道具，与红蘑菇同构、绿伞白点） 16x16 ===== */
+SPRITES['1up'] = makeSprite([
+  '.....TTTTTT.....',
+  '....TTTTTTTT....',
+  '...TTTTTTTTTT...',
+  '..TTTTTTTTTTTT..',
+  '..TTTTTTTTTTTT..',
+  '.TTWWTTTTWWTTTT.',
+  '.TTWWTTTTWWTTTT.',
+  '.TTTTTTTTTTTTTT.',
+  '.TTTTTTTTTTTTTT.',
+  '.TTTTTTTTTTTTTT.',
+  '..TTTTTTTTTTTT..',
+  '...EEEEEEEEEE...',
+  '...EEEEEEEEEE...',
+  '...EEEEEEEEEE...',
+  '....EEEEEEEE....',
+  '....EEEEEEEE....',
+], PAL);
+
 /* ===== 火焰花（发子弹道具） 12x16 ===== */
 SPRITES['flower'] = makeSprite([
   '.....FF.....',
@@ -1667,6 +1687,7 @@ class Renderer {
 function spriteFor(type){
   if(type==='flower')return SPRITES.flower;
   if(type==='star')return SPRITES.star;
+  if(type==='1up')return SPRITES['1up'];
   return SPRITES.mushroom;
 }
 
@@ -1842,7 +1863,13 @@ class AudioFX {
   fire(){ this._tone(1400, 0.15, 'square', 0.08, 400); }
   bump(){ this._tone(140, 0.1, 'square', 0.12); }
   die(){ [400,300,200,120].forEach((f,i)=>setTimeout(()=>this._tone(f,0.15,'sawtooth',0.12),i*140)); }
-  flag(){ this._tone(523,0.1,'square',0.1); setTimeout(()=>this._tone(659,0.1,'square',0.1),110); setTimeout(()=>this._tone(784,0.25,'square',0.12),220); }
+  oneup(){ [659,784,1046,1319,1568].forEach((f,i)=>setTimeout(()=>this._tone(f,0.09,'square',0.13),i*80)); }  // 经典加命快速琶音
+  flag(){ // 抓旗瞬间三连上升音 + 旗子下滑滑音（与旗滑动画 1.2s 同步）
+    this._tone(523,0.1,'square',0.1);
+    setTimeout(()=>this._tone(659,0.1,'square',0.1),110);
+    setTimeout(()=>this._tone(784,0.12,'square',0.12),220);
+    setTimeout(()=>this._tone(784,0.95,'triangle',0.13,196),300);
+  }
   clear(){ [523,523,523,659,784,659,1046].forEach((f,i)=>setTimeout(()=>this._tone(f,0.12,'square',0.13),i*120)); }
 }
 
@@ -2061,7 +2088,7 @@ class Game {
   applyPower(type){
     const p=this.player;
     if (type==='coin'){ p.coins++; p.score+=100; this.sfx.coin(); return; }
-    if (type==='1up'){ this.lives++; this.addScore(1000); this.onStateChange('hud', this); this.sfx.clear(); return; }
+    if (type==='1up'){ this.lives++; this.addScore(1000); this.onStateChange('hud', this); this.sfx.oneup(); return; }
     if (type==='mushroom'){ if (p.small){ p.small=false; p.setSize(); } p.score+=1000; this.sfx.powerup(); this.onStateChange('hud', this); return; }
     if (type==='flower'){ p.fire=true; p.small=false; p.setSize(); p.score+=1000; this.sfx.powerup(); this.onStateChange('hud', this); return; }
     if (type==='star'){ p.starT=9999; p.invincible=true; this.starMario=true; this.sfx.powerup(); return; }
@@ -2094,6 +2121,7 @@ class Game {
       if (p.cleared){                          // 玩家已走进城堡
         this.animDone = true;
         this.resultT = 0;
+        this.sfx.clear();                      // 走进城堡：播放过关旋律
         this.onStateChange('clear', this);     // 此时才显示 COURSE CLEAR 覆盖层
       }
     } else {

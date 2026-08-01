@@ -248,6 +248,7 @@ export class Renderer {
 function spriteFor(type){
   if(type==='flower')return SPRITES.flower;
   if(type==='star')return SPRITES.star;
+  if(type==='1up')return SPRITES['1up'];
   return SPRITES.mushroom;
 }
 

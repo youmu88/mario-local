@@ -332,6 +332,26 @@ SPRITES['mushroom'] = makeSprite([
   '....EEEEEEEE....',
 ], PAL);
 
+/* ===== 1up 绿蘑菇（加命道具，与红蘑菇同构、绿伞白点） 16x16 ===== */
+SPRITES['1up'] = makeSprite([
+  '.....TTTTTT.....',
+  '....TTTTTTTT....',
+  '...TTTTTTTTTT...',
+  '..TTTTTTTTTTTT..',
+  '..TTTTTTTTTTTT..',
+  '.TTWWTTTTWWTTTT.',
+  '.TTWWTTTTWWTTTT.',
+  '.TTTTTTTTTTTTTT.',
+  '.TTTTTTTTTTTTTT.',
+  '.TTTTTTTTTTTTTT.',
+  '..TTTTTTTTTTTT..',
+  '...EEEEEEEEEE...',
+  '...EEEEEEEEEE...',
+  '...EEEEEEEEEE...',
+  '....EEEEEEEE....',
+  '....EEEEEEEE....',
+], PAL);
+
 /* ===== 火焰花（发子弹道具） 12x16 ===== */
 SPRITES['flower'] = makeSprite([
   '.....FF.....',

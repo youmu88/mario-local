@@ -211,7 +211,7 @@ export class Game {
   applyPower(type){
     const p=this.player;
     if (type==='coin'){ p.coins++; p.score+=100; this.sfx.coin(); return; }
-    if (type==='1up'){ this.lives++; this.addScore(1000); this.onStateChange('hud', this); this.sfx.clear(); return; }
+    if (type==='1up'){ this.lives++; this.addScore(1000); this.onStateChange('hud', this); this.sfx.oneup(); return; }
     if (type==='mushroom'){ if (p.small){ p.small=false; p.setSize(); } p.score+=1000; this.sfx.powerup(); this.onStateChange('hud', this); return; }
     if (type==='flower'){ p.fire=true; p.small=false; p.setSize(); p.score+=1000; this.sfx.powerup(); this.onStateChange('hud', this); return; }
     if (type==='star'){ p.starT=9999; p.invincible=true; this.starMario=true; this.sfx.powerup(); return; }
@@ -244,6 +244,7 @@ export class Game {
       if (p.cleared){                          // 玩家已走进城堡
         this.animDone = true;
         this.resultT = 0;
+        this.sfx.clear();                      // 走进城堡：播放过关旋律
         this.onStateChange('clear', this);     // 此时才显示 COURSE CLEAR 覆盖层
       }
     } else {

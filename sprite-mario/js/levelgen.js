@@ -4,7 +4,7 @@
  *   0 空
  *   1 坚硬砖(block,不可破坏)
  *   2 可撞碎的砖(brick, 从上方撞可碎)
- *   3 问号块(未用)
+ *   3 问号块(可顶出金币/道具)
  *   4 已用问号块
  *   5 地板(ground, 特殊顶部纹理)
  * 敌人类型：goomba 板栗仔 / koopa 乌龟 / spiny 尖刺龟(踩踏受伤) / flyer 红翼板栗(空中) / piranha 食人花(管道)
@@ -44,7 +44,8 @@ export function generateLevel(levelNo, seedStr){
   const H = 12;                     // 逻辑高度(块)
   const groundY = H-1;              // 地板行
   const GROUND = 5;
-  const w = 200 + levelNo*8;        // 关卡长度随关卡增长
+  // 关卡长度随关卡显著增长：每关 +30 格，进入下一关后明显更长的旅程
+  const w = 190 + levelNo*30;       // level1=220 level2=250 level3=280 ...
   const tiles = createEmpty(w, H);
   // 地板（单行：H=12 时 tiles[groundY+1] 越界恒不生效，地面仅一行，脚底行=groundY）
   for (let x=0;x<w;x++) tiles[groundY][x] = GROUND;
@@ -57,9 +58,23 @@ export function generateLevel(levelNo, seedStr){
   // 难度系数
   const diff = Math.min(1 + levelNo*0.12, 4.5);
   const pitChance = Math.min(0.55 + levelNo*0.03, 0.9);
-  const enemyRate = Math.min(0.5 + levelNo*0.06, 1.6);
+  const enemyRate = Math.min(0.55 + levelNo*0.08, 1.8);
 
-  const pushBlock = (bx, kind, content) => blocks.push({x:bx, y:groundY-2, kind, content});
+  // 问号块：同时写入 tiles（tile 3），保证渲染/碰撞/可顶
+  const pushBlock = (bx, kind, content) => {
+    blocks.push({x:bx, y:groundY-2, kind, content});
+    tiles[groundY-2][bx] = 3;
+  };
+    // 问号块道具内容：金币/蘑菇/花/星/1up（经典分布，统一为具体类型）
+  const pickContent = () => {
+    const r = rng();
+    if (r < 0.55) return 'coin';
+    if (r < 0.75) return 'mushroom';
+    if (r < 0.88) return 'flower';
+    if (r < 0.97) return 'star';
+    return '1up';
+  };
+
   const tileY = groundY-1;  // 放置实体块的行(距地面1格)
 
   // 起始安全段
@@ -95,7 +110,7 @@ export function generateLevel(levelNo, seedStr){
         // 平台上放块
         if (rng()<0.6 && x+platW < w-15){
           const kb = rng();
-          if (kb<0.5) pushBlock(x+1,'?', rng()<0.7?'coin':'power');
+          if (kb<0.5) pushBlock(x+1,'?', rng()<0.55?'coin':pickContent());
           else tiles[platY-1>=0?platY-1:platY-1][x+2]=2;
           x += platW;
         } else {
@@ -106,10 +121,15 @@ export function generateLevel(levelNo, seedStr){
         if (rng()<0.6 && x < w-16){
           const n = ri(1,3);
           for (let i=0;i<n;i++){
-            pushBlock(x+i*2, '?', rng()<0.6?'coin':(rng()<0.8?'power':'1up'));
+            pushBlock(x+i*2, '?', rng()<0.55?'coin':pickContent());
           }
           x += n*2 + ri(1,2);
         } else {
+          // 纯平地段落：中点放宝箱点缀，避免后半程大段空白（快速冲到旗杆）
+          const mid = x + Math.floor(segW/2);
+          if (mid > 12 && mid < w-18 && rng()<0.75){
+            pushBlock(mid, '?', rng()<0.55?'coin':pickContent());
+          }
           x += segW;
         }
         // 散落地面的敌人（随难度混入尖刺龟/飞行板栗）
@@ -130,7 +150,7 @@ export function generateLevel(levelNo, seedStr){
         const bx = x + i*2;
         if (bx > w-16) break;
         const kind = i%2===0 ? '?' : 'b';
-        if (kind==='?') pushBlock(bx, '?', rng()<0.5?'coin':'power');
+        if (kind==='?') pushBlock(bx, '?', rng()<0.55?'coin':pickContent());
         else tiles[tileY][bx]=2;
       }
       x += nb*2;
@@ -148,7 +168,7 @@ export function generateLevel(levelNo, seedStr){
         spawns.push({x:x, y:tileY-(ph-1), type:'piranha'});
       }
       // 管道口跳上来有宝
-      if (rng()<0.5) pushBlock(x, '?', 'power');
+      if (rng()<0.5) pushBlock(x, '?', 'mushroom');
       x += 2 + ri(1,3);
     }
     else { // enemies
@@ -168,8 +188,8 @@ export function generateLevel(levelNo, seedStr){
   // 处理凹块上方的地形保持(确保有支撑)
   // 终点旗杆 + 城堡
   const flagX = w - 9;
-  // 终点前一段清空地面敌人安全
-  for (let i=0;i<blocks.length;i++){ if (blocks[i].x > flagX-2){ blocks.splice(i,1); i--; } }
+  // 终点前一段清空地面敌人安全（同时把已写入 tiles 的问号块清掉）
+  for (let i=0;i<blocks.length;i++){ if (blocks[i].x > flagX-2){ tiles[blocks[i].y][blocks[i].x]=0; blocks.splice(i,1); i--; } }
   for (let i=0;i<spawns.length;i++){ if (spawns[i].x > flagX-2){ spawns.splice(i,1); i--; } }
 
   // 画旗杆(地图元素) — 用块标记: 在 flagX 垂直列放杆和旗

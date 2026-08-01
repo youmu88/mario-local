@@ -257,11 +257,14 @@ function sky(ctx,camX){
   ctx.fillStyle=g;ctx.fillRect(-40,0,720,360);
 }
 function clouds(ctx,camX){
+  // 两行整齐云阵：行高固定 44/96、行内间距 240、两行错开 120，视差滚动，观感整齐如书脊
   ctx.fillStyle='rgba(255,255,255,0.85)';
   for(let i=0;i<6;i++){
-    const r=((i*260 - camX*0.25)%1400+1400)%1400-120, y=40+(i%3)*42;
+    const col=i%3, row=Math.floor(i/3);
+    const r=((col*240 + row*120 - camX*0.25)%1080+1080)%1080-160;
+    const y=row===0?44:96;
     ctx.beginPath();
-    ctx.arc(r,y,16,0,7);ctx.arc(r+18,y-6,20,0,7);ctx.arc(r+38,y,16,0,7);ctx.fill();
+    ctx.arc(r,y,15,0,7);ctx.arc(r+19,y-4,19,0,7);ctx.arc(r+38,y,15,0,7);ctx.fill();
   }
 }
 

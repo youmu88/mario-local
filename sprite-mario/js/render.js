@@ -167,7 +167,8 @@ export class Renderer {
       else spr = SPRITES.mario_big;
     }
     if(!spr) spr = SPRITES.mario_small;
-    const flicker = player.hurtFlashT>0 && Math.floor(player.hurtFlashT/6)%2===0;
+    const ft = player.hurtFlashT>0 ? player.hurtFlashT : (player.respawnInvT||0);
+    const flicker = ft>0 && Math.floor(ft/6)%2===0;
     ctx.globalAlpha = flicker?0.5:1;
     const o={flip:player.dir<0, fit:player.h};
     // 按玩家逻辑高度缩放精灵(占格不变，细节放大)；水平居中，避免各帧宽度不同导致跑动左右跳动
@@ -189,7 +190,7 @@ export class Renderer {
     tp(340,10,`WORLD ${t.levelNo}`);
     tp(520,10,`TIME ${String(Math.ceil(t.world?(t.world.time):300)).padStart(3,'0')}`);
     tp(140,34,`命 x${t.lives}`);
-    if(p.starT>0&&p.starT<9999){ctx.fillStyle='#ffe14d';tp(420,34,'无敌*');}
+    if((p.starT>0&&p.starT<9999)||p.respawnInvT>0){ctx.fillStyle='#ffe14d';tp(420,34,'无敌*');}
     ctx.restore();
   }
 

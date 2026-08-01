@@ -8,7 +8,7 @@ const CFG_ = CFG;
 export class Player {
   constructor(world, startCfg){
     this.world = world;
-    this.x = world.startX*TILE;
+    this.x = (startCfg.spawnX!=null) ? startCfg.spawnX : world.startX*TILE;
     this.y = world.groundY*TILE - TILE;
     this.small = !startCfg.startBig;
     this.fire = !!startCfg.startFire;
@@ -28,6 +28,7 @@ export class Player {
     this.score=0;
     this.coins=0;
     this.hurtFlashT=0;    // 受伤闪烁(无敌时间)
+    this.respawnInvT=0;   // 复活无敌计时(5秒，期间不受伤害)
     this.frames=0;
   }
 
@@ -46,6 +47,7 @@ export class Player {
   update(input, sfx){
     this.frames++;
     if (this.hurtFlashT>0) this.hurtFlashT--;
+    if (this.respawnInvT>0) this.respawnInvT--;
 
     // 死亡下跌
     if (this.dying){
@@ -135,7 +137,7 @@ export class Player {
   }
 
   damage(){
-    if (this.starT>0) return;
+    if (this.starT>0 || this.respawnInvT>0) return;
     if (!this.small){ this.small=true; this.setSize(); this.hurtFlashT=80; }   // 缩回
     else { this.alive=false; }
   }

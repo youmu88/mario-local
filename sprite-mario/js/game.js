@@ -39,12 +39,18 @@ export class Game {
     const keepBig = respawn && this.player ? !this.player.small : this.cfg.startBig;
     const keepFire = respawn && this.player ? this.player.fire : this.cfg.startFire;
     const seed = (respawn && this.world) ? this.world.seed : null;  // 复活用同一seed保持同关
+    const spawnX = (respawn && this.world) ? this.world.checkpointX : null;  // 复活点(像素)：上次激活的检查点
     this.world = new World(this.levelNo, seed, this.cfg);
     this.world.score = this.score;
-    this.player = new Player(this.world, { startBig: keepBig, startFire: keepFire, invincible: this.cfg.invincible });
+    this.player = new Player(this.world, { startBig: keepBig, startFire: keepFire, invincible: this.cfg.invincible, spawnX });
     this.world.player = this.player;   // 挂载玩家引用（食人花等需要感知玩家位置）
     this.player.score = this.score;
     this.player.lives = this.lives;
+    // 复活：镜头跳到出生点 + 5 秒无敌保护（300帧）
+    if (respawn && spawnX!=null){
+      this.world.camX = this.world.camTarget = Math.max(-60, spawnX - 200);
+      this.player.respawnInvT = 300;
+    }
     this.state = 'playing';
     this.timer = 0;
     this.clearT = 0;
@@ -59,6 +65,7 @@ export class Game {
       this.world.time = Math.max(0, 300 - Math.floor(this.timer));
       this.updateWorld();
       this.updatePlayer();
+      if (this.player.alive) this.world.updateCheckpoint(this.player.x);
       this.checkCollisions();
       this.updateCamera();
       // 分数同步
@@ -100,6 +107,7 @@ export class Game {
     const w = this.world, p = this.player;
     if (!p.alive || this.state!=='playing') return;
     const pa = {x:p.x,y:p.y,w:p.w,h:p.h};
+    const inv = p.starT>0 || p.hurtFlashT>0 || p.respawnInvT>0;  // 无敌(星星/受伤闪烁/复活保护)
     // 与道具
     for (const pu of w.powerups){
       if (!pu.alive) continue;
@@ -117,7 +125,7 @@ export class Game {
       if (stomping){
         // 可踩：goomba/koopa/flyer；不可踩：piranha(花)/spiny(尖刺，踩踏受伤)
         if (e.type==='piranha' || e.type==='spiny'){
-          if (p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+          if (!inv) this.hurtPlayer();
         } else {
           this.stomp(e);
         }
@@ -125,10 +133,10 @@ export class Game {
         // 侧面碰撞
         if (e.type==='koopa' && e.shell && e.kicked){
           // 被踢出的壳撞到玩家：刚踢出瞬间不伤，之后受伤（原版行为）
-          if (e.kickT > 10 && p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+          if (e.kickT > 10 && !inv) this.hurtPlayer();
           continue;
         }
-        if (p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+        if (!inv) this.hurtPlayer();
       }
     }
     // 踢出的壳击杀其他敌人（撞墙反弹连杀）
@@ -192,7 +200,7 @@ export class Game {
 
   hurtPlayer(){
     const p = this.player;
-    if (p.hurtFlashT>0 || p.starT>0) return;  // 无敌期(星星)或受伤闪烁期不再受伤
+    if (p.hurtFlashT>0 || p.starT>0 || p.respawnInvT>0) return;  // 无敌期(星星/复活保护)或受伤闪烁期不再受伤
     p.hurtFlashT=80;
     p.damage();   // 大变小 / 小死亡
     this.sfx.hurt();

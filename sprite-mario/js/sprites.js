@@ -574,12 +574,26 @@ function makeBigRunFrame(baseCanvas, dy){
 let officialLoaded = 0;
 const OFFICIAL_TOTAL = Object.keys(OFFICIAL_URLS).length;
 
+// 官方马里奥素材面向左（帽檐朝左，与官方 koopa 同源）；水平镜像为面向右，
+// 与程序化精灵(面向右)及 drawPlayer 的 flip=(dir<0) 逻辑保持一致。
+function flipCanvas(c){
+  const f = document.createElement('canvas');
+  f.width = c.width; f.height = c.height;
+  const g = f.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.translate(c.width, 0);
+  g.scale(-1, 1);
+  g.drawImage(c, 0, 0);
+  return f;
+}
+
 function loadOfficialSprite(key, url){
   const img = new Image();
   img.onload = () => {
-    const c = document.createElement('canvas');
+    let c = document.createElement('canvas');
     c.width = img.width; c.height = img.height;
     c.getContext('2d').drawImage(img, 0, 0);
+    if (key.indexOf('mario_')===0) c = flipCanvas(c);   // 官方 mario 帧统一镜像为面向右
     SPRITES[key] = c;
     officialLoaded++;
     // 大马里奥跑步：由单帧派生腾空/落地帧（官方素材加载后自动启用 3 帧跑步动画）

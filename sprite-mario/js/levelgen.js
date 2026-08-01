@@ -177,11 +177,20 @@ export function generateLevel(levelNo, seedStr){
   for (let py=0; py<3; py++) tiles[tileY-1-py][flagX]=1;
   const flag = { x: flagX };
 
+  // ===== 检查点：起点 + 沿途安全列（连续3格地面、头顶2格无实心块），死亡后从最近检查点复活 =====
+  const checkpoints = [{ x: 6 }];
+  for (let cx = 26; cx < flagX - 6; cx += 20){
+    const ok = tiles[groundY][cx]===5 && tiles[groundY][cx-1]===5 && tiles[groundY][cx+1]===5
+      && tiles[groundY-1][cx]===0 && tiles[groundY-2][cx]===0;
+    if (ok) checkpoints.push({ x: cx });
+  }
+
   return {
     w, h:H, tiles, startX: 6,
     groundY, tileY,
     blocks, spawns,
     flagX,
+    checkpoints,
     seed: seedStr || ('level'+levelNo),
     levelNo
   };

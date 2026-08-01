@@ -39,6 +39,20 @@ export class World {
     this.time = 300;
     this.complete = false;
     this.startCfg = startCfg;
+
+    // 检查点（复活点）：起点 + 沿途安全列；curCp 为当前已激活检查点索引
+    this.checkpoints = (gen.checkpoints && gen.checkpoints.length) ? gen.checkpoints : [{ x: gen.startX }];
+    this.curCp = 0;
+  }
+
+  // 当前复活点（像素）
+  get checkpointX(){ return this.checkpoints[this.curCp].x * TILE; }
+
+  // 玩家前进经过检查点时激活最新一个（死亡后从该点复活）
+  updateCheckpoint(px){
+    while (this.curCp+1 < this.checkpoints.length && this.checkpoints[this.curCp+1].x*TILE <= px){
+      this.curCp++;
+    }
   }
 
   spawnFromDefs(){

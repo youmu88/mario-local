@@ -621,12 +621,26 @@ function makeBigRunFrame(baseCanvas, dy){
 let officialLoaded = 0;
 const OFFICIAL_TOTAL = Object.keys(OFFICIAL_URLS).length;
 
+// 官方马里奥素材面向左（帽檐朝左，与官方 koopa 同源）；水平镜像为面向右，
+// 与程序化精灵(面向右)及 drawPlayer 的 flip=(dir<0) 逻辑保持一致。
+function flipCanvas(c){
+  const f = document.createElement('canvas');
+  f.width = c.width; f.height = c.height;
+  const g = f.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  g.translate(c.width, 0);
+  g.scale(-1, 1);
+  g.drawImage(c, 0, 0);
+  return f;
+}
+
 function loadOfficialSprite(key, url){
   const img = new Image();
   img.onload = () => {
-    const c = document.createElement('canvas');
+    let c = document.createElement('canvas');
     c.width = img.width; c.height = img.height;
     c.getContext('2d').drawImage(img, 0, 0);
+    if (key.indexOf('mario_')===0) c = flipCanvas(c);   // 官方 mario 帧统一镜像为面向右
     SPRITES[key] = c;
     officialLoaded++;
     // 大马里奥跑步：由单帧派生腾空/落地帧（官方素材加载后自动启用 3 帧跑步动画）
@@ -914,11 +928,20 @@ function generateLevel(levelNo, seedStr){
   for (let py=0; py<3; py++) tiles[tileY-1-py][flagX]=1;
   const flag = { x: flagX };
 
+  // ===== 检查点：起点 + 沿途安全列（连续3格地面、头顶2格无实心块），死亡后从最近检查点复活 =====
+  const checkpoints = [{ x: 6 }];
+  for (let cx = 26; cx < flagX - 6; cx += 20){
+    const ok = tiles[groundY][cx]===5 && tiles[groundY][cx-1]===5 && tiles[groundY][cx+1]===5
+      && tiles[groundY-1][cx]===0 && tiles[groundY-2][cx]===0;
+    if (ok) checkpoints.push({ x: cx });
+  }
+
   return {
     w, h:H, tiles, startX: 6,
     groundY, tileY,
     blocks, spawns,
     flagX,
+    checkpoints,
     seed: seedStr || ('level'+levelNo),
     levelNo
   };
@@ -1163,6 +1186,20 @@ class World {
     this.time = 300;
     this.complete = false;
     this.startCfg = startCfg;
+
+    // 检查点（复活点）：起点 + 沿途安全列；curCp 为当前已激活检查点索引
+    this.checkpoints = (gen.checkpoints && gen.checkpoints.length) ? gen.checkpoints : [{ x: gen.startX }];
+    this.curCp = 0;
+  }
+
+  // 当前复活点（像素）
+  get checkpointX(){ return this.checkpoints[this.curCp].x * TILE; }
+
+  // 玩家前进经过检查点时激活最新一个（死亡后从该点复活）
+  updateCheckpoint(px){
+    while (this.curCp+1 < this.checkpoints.length && this.checkpoints[this.curCp+1].x*TILE <= px){
+      this.curCp++;
+    }
   }
 
   spawnFromDefs(){
@@ -1203,7 +1240,7 @@ const CFG_ = CFG;
 class Player {
   constructor(world, startCfg){
     this.world = world;
-    this.x = world.startX*TILE;
+    this.x = (startCfg.spawnX!=null) ? startCfg.spawnX : world.startX*TILE;
     this.y = world.groundY*TILE - TILE;
     this.small = !startCfg.startBig;
     this.fire = !!startCfg.startFire;
@@ -1223,6 +1260,7 @@ class Player {
     this.score=0;
     this.coins=0;
     this.hurtFlashT=0;    // 受伤闪烁(无敌时间)
+    this.respawnInvT=0;   // 复活无敌计时(5秒，期间不受伤害)
     this.frames=0;
   }
 
@@ -1241,6 +1279,7 @@ class Player {
   update(input, sfx){
     this.frames++;
     if (this.hurtFlashT>0) this.hurtFlashT--;
+    if (this.respawnInvT>0) this.respawnInvT--;
 
     // 死亡下跌
     if (this.dying){
@@ -1330,7 +1369,7 @@ class Player {
   }
 
   damage(){
-    if (this.starT>0) return;
+    if (this.starT>0 || this.respawnInvT>0) return;
     if (!this.small){ this.small=true; this.setSize(); this.hurtFlashT=80; }   // 缩回
     else { this.alive=false; }
   }
@@ -1506,7 +1545,8 @@ class Renderer {
       else spr = SPRITES.mario_big;
     }
     if(!spr) spr = SPRITES.mario_small;
-    const flicker = player.hurtFlashT>0 && Math.floor(player.hurtFlashT/6)%2===0;
+    const ft = player.hurtFlashT>0 ? player.hurtFlashT : (player.respawnInvT||0);
+    const flicker = ft>0 && Math.floor(ft/6)%2===0;
     ctx.globalAlpha = flicker?0.5:1;
     const o={flip:player.dir<0, fit:player.h};
     // 按玩家逻辑高度缩放精灵(占格不变，细节放大)；水平居中，避免各帧宽度不同导致跑动左右跳动
@@ -1528,7 +1568,7 @@ class Renderer {
     tp(340,10,`WORLD ${t.levelNo}`);
     tp(520,10,`TIME ${String(Math.ceil(t.world?(t.world.time):300)).padStart(3,'0')}`);
     tp(140,34,`命 x${t.lives}`);
-    if(p.starT>0&&p.starT<9999){ctx.fillStyle='#ffe14d';tp(420,34,'无敌*');}
+    if((p.starT>0&&p.starT<9999)||p.respawnInvT>0){ctx.fillStyle='#ffe14d';tp(420,34,'无敌*');}
     ctx.restore();
   }
 
@@ -1774,12 +1814,18 @@ class Game {
     const keepBig = respawn && this.player ? !this.player.small : this.cfg.startBig;
     const keepFire = respawn && this.player ? this.player.fire : this.cfg.startFire;
     const seed = (respawn && this.world) ? this.world.seed : null;  // 复活用同一seed保持同关
+    const spawnX = (respawn && this.world) ? this.world.checkpointX : null;  // 复活点(像素)：上次激活的检查点
     this.world = new World(this.levelNo, seed, this.cfg);
     this.world.score = this.score;
-    this.player = new Player(this.world, { startBig: keepBig, startFire: keepFire, invincible: this.cfg.invincible });
+    this.player = new Player(this.world, { startBig: keepBig, startFire: keepFire, invincible: this.cfg.invincible, spawnX });
     this.world.player = this.player;   // 挂载玩家引用（食人花等需要感知玩家位置）
     this.player.score = this.score;
     this.player.lives = this.lives;
+    // 复活：镜头跳到出生点 + 5 秒无敌保护（300帧）
+    if (respawn && spawnX!=null){
+      this.world.camX = this.world.camTarget = Math.max(-60, spawnX - 200);
+      this.player.respawnInvT = 300;
+    }
     this.state = 'playing';
     this.timer = 0;
     this.clearT = 0;
@@ -1794,6 +1840,7 @@ class Game {
       this.world.time = Math.max(0, 300 - Math.floor(this.timer));
       this.updateWorld();
       this.updatePlayer();
+      if (this.player.alive) this.world.updateCheckpoint(this.player.x);
       this.checkCollisions();
       this.updateCamera();
       // 分数同步
@@ -1835,6 +1882,7 @@ class Game {
     const w = this.world, p = this.player;
     if (!p.alive || this.state!=='playing') return;
     const pa = {x:p.x,y:p.y,w:p.w,h:p.h};
+    const inv = p.starT>0 || p.hurtFlashT>0 || p.respawnInvT>0;  // 无敌(星星/受伤闪烁/复活保护)
     // 与道具
     for (const pu of w.powerups){
       if (!pu.alive) continue;
@@ -1852,7 +1900,7 @@ class Game {
       if (stomping){
         // 可踩：goomba/koopa/flyer；不可踩：piranha(花)/spiny(尖刺，踩踏受伤)
         if (e.type==='piranha' || e.type==='spiny'){
-          if (p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+          if (!inv) this.hurtPlayer();
         } else {
           this.stomp(e);
         }
@@ -1860,10 +1908,10 @@ class Game {
         // 侧面碰撞
         if (e.type==='koopa' && e.shell && e.kicked){
           // 被踢出的壳撞到玩家：刚踢出瞬间不伤，之后受伤（原版行为）
-          if (e.kickT > 10 && p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+          if (e.kickT > 10 && !inv) this.hurtPlayer();
           continue;
         }
-        if (p.starT<=0 && p.hurtFlashT<=0) this.hurtPlayer();
+        if (!inv) this.hurtPlayer();
       }
     }
     // 踢出的壳击杀其他敌人（撞墙反弹连杀）
@@ -1927,7 +1975,7 @@ class Game {
 
   hurtPlayer(){
     const p = this.player;
-    if (p.hurtFlashT>0 || p.starT>0) return;  // 无敌期(星星)或受伤闪烁期不再受伤
+    if (p.hurtFlashT>0 || p.starT>0 || p.respawnInvT>0) return;  // 无敌期(星星/复活保护)或受伤闪烁期不再受伤
     p.hurtFlashT=80;
     p.damage();   // 大变小 / 小死亡
     this.sfx.hurt();

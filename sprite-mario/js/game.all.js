@@ -1,5 +1,5 @@
 /* ===== SUPER MARIO - 单文件构建版 (自动生成，避免 file:// 下 ES module CORS 黑屏) ===== */
-/* 来源: js/*.js (ES module) 合并去模块化 */
+/* 来源: js/*.js (ES module) 合并去模块化，由 npm run build 重新生成 */
 ;(function(){
 "use strict";
 
@@ -1320,8 +1320,22 @@ class Game {
         this.stomp(e);
       } else {
         // 被碰
-        if (p.starT<=0){
+        if (p.starT<=0 && p.hurtFlashT<=0){
           this.hurtPlayer();
+        }
+      }
+    }
+    // 子弹击杀敌人(火球可消灭板栗与乌龟，+100分)
+    for (const b of w.bullets){
+      if (!b.alive) continue;
+      for (const e of w.enemies){
+        if (!e.alive || e.dead) continue;
+        const ebox = {x:e.x,y:e.y,w:e.w,h:e.h};
+        if (aabb(b, ebox) && this.killEnemyByBullet(b)){
+          e.dead=true; e.deadT=20; e.vx=0;
+          this.addScore(100);
+          this.sfx.stomp();
+          break;
         }
       }
     }
@@ -1329,6 +1343,13 @@ class Game {
     if (!w.flagReached && p.x + p.w >= w.flagX*TILE + 8){
       this.reachFlag();
     }
+  }
+
+  // 子弹命中敌人：返回 true 表示命中并消耗该子弹
+  killEnemyByBullet(b){
+    if (b.hitFrames !== undefined) return false;
+    b.alive = false;      // 触敌即消散(经典火球命中敌人消失)
+    return true;
   }
 
   stomp(e){
@@ -1554,6 +1575,7 @@ function init(){
   });
   ui.mount();
   renderer.resize();
+  window.__MARIO_DEBUG = { game, renderer, input, sfx };
 
   window.addEventListener('resize', ()=>renderer.resize());
   window.addEventListener('keydown', e=>{ if(e.key==='Enter'){ sfx.resume(); } });

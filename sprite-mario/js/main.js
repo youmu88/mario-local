@@ -40,6 +40,7 @@ function init(){
   });
   ui.mount();
   renderer.resize();
+  window.__MARIO_DEBUG = { game, renderer, input, sfx };
 
   window.addEventListener('resize', ()=>renderer.resize());
   window.addEventListener('keydown', e=>{ if(e.key==='Enter'){ sfx.resume(); } });

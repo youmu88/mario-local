@@ -29,6 +29,7 @@ export class UI {
     s.innerHTML = `
       <div class="title">SUPER MARIO</div>
       <div class="subtitle">▶ 无限随机闯关 · 高精度经典还原 ◀</div>
+      <div class="ver-tag">v1.12.0 · 像素锐利版（若画面模糊请硬刷新 Cmd+Shift+R）</div>
       <div class="config-box">
         <div class="config-row">
           <div class="config-label">命数<small>初始生命数量</small></div>

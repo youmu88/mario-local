@@ -106,3 +106,6 @@ canvas#game {
   .screen .title { font-size:30px; }
   .hud { font-size:11px; }
 }
+
+/* 版本号角标：排障自检（确认是否最新版） */
+.ver-tag{text-align:center;color:#fff;font-size:12px;opacity:.75;margin-top:10px;text-shadow:1px 1px 0 #000}

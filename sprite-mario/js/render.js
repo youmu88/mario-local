@@ -32,7 +32,8 @@ export class Renderer {
   }
 
   draw(world){
-    const ctx=this.ctx, camX=world.camX;
+    // 相机量化到设备像素网格：浮点 camX 是精灵 3/5px 混排(模糊)根因之一
+    const ctx=this.ctx, camX=Math.round(world.camX*this.scale)/this.scale;
     ctx.save();
     ctx.translate(this.offX, this.offY);
     ctx.scale(this.scale, this.scale);
@@ -83,6 +84,17 @@ export class Renderer {
     let w=spl.width, h=spl.height;
     if(o.fit){ const k=o.fit/spl.height; w=spl.width*k; h=o.fit; }
     else if(o.scale){ w=spl.width*o.scale; h=spl.height*o.scale; }
+    // 像素对齐（模糊根因修复）：整数倍缩放时，尺寸吸附到源像素整数倍（每源像素=整数设备像素，
+    // 根除 4.92x 等非整数源缩放比的 4/5px 混排）；坐标量化到设备像素网格（根除浮点矩形 nearest 取样错位）。
+    // 底部锚定：高度微调向上延伸，脚底不动（避免视觉上下沉）。
+    if(this.scale>=1){
+      const s=this.scale, h0=h;
+      h=Math.max(spl.height/s, Math.round(h*s/spl.height)*spl.height/s);
+      w=h/spl.height*spl.width;
+      const q=1/s;
+      sx=Math.round((sx-(h-h0)*0)/q)*q;  // x 量化
+      sy=Math.round(sy+(h0-h))/q*q;      // 底部锚定后 y 量化
+    }
     ctx.save();
     ctx.globalAlpha = o.alpha!==undefined?o.alpha:1;
     if(o.flip){ ctx.translate(sx+w,sy); ctx.scale(-1,1); ctx.drawImage(spl,0,0,w,h); }
@@ -177,6 +189,7 @@ export class Renderer {
   drawPlayer(player, camX, dying){
     const ctx=this.ctx;
     ctx.save();ctx.translate(this.offX,this.offY);ctx.scale(this.scale,this.scale);
+    camX=Math.round(camX*this.scale)/this.scale;  // 与 draw() 同网格量化
     const sx=player.x-camX;
     let spr;
     if (player.clearMode==='slide'){

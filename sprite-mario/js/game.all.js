@@ -1545,15 +1545,18 @@ class Renderer {
     this.offX = 0; this.offY = 0;
   }
 
-  // 计算缩放(保留整块像素，最大清晰度)
+  // 计算缩放：devicePixelRatio 适配 + 整数倍 snapping（1 游戏像素 = 整数设备像素，块边缘均匀锐利）
   resize(){
+    const dpr = window.devicePixelRatio || 1;
     const cw = window.innerWidth, ch = window.innerHeight;
-    this.canvas.width = cw; this.canvas.height = ch;
-    // 保持 640x360 逻辑，等比缩放
-    const s = Math.min(cw/640, ch/360);
-    this.scale = s;
-    this.offX = (cw - 640*s)/2;
-    this.offY = (ch - 360*s)/2;
+    // 后备缓冲 = CSS 尺寸 × dpr（CSS 仍 100% 铺满视口，显示尺寸不变，Retina 锐利）
+    this.canvas.width = Math.round(cw * dpr);
+    this.canvas.height = Math.round(ch * dpr);
+    // 保持 640x360 逻辑；缩放 snapping 到设备像素整数倍（任意 dpr 下无 2/3px 混排）；小窗兜底等比缩小
+    const fit = Math.min(this.canvas.width/640, this.canvas.height/360);
+    this.scale = fit >= 1 ? Math.floor(fit) : fit;
+    this.offX = Math.floor((this.canvas.width - 640*this.scale)/2);
+    this.offY = Math.floor((this.canvas.height - 360*this.scale)/2);
     this.ctx.imageSmoothingEnabled = false;
   }
 

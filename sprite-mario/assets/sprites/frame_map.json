@@ -8,6 +8,7 @@
     "mario_small_jump": "mario_4.png",
     "mario_big": "mario_6.png",
     "mario_big_run": "mario_7.png",
+    "mario_big_crouch": "mario_crouch.png",
     "goomba": "goomba_0.png",
     "goomba_w2": "goomba_1.png",
     "goomba_squash": "goomba_4.png",

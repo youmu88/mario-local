@@ -237,8 +237,13 @@ export class Game {
     if (this.world.flagReached) return;
     this.world.flagReached = true;
     this.sfx.flag();
-    this.addScore(1000);
     const p=this.player;
+    // 原版计分：按抓杆高度分档（杆底 100 → 杆顶 5000），抓得越高分越多
+    const w=this.world, poleH=6*TILE, base=w.groundY*TILE;
+    const grabH=Math.max(0, Math.min(poleH, base-(p.y+p.h)));
+    const TIERS=[100,200,400,800,1000,2000,4000,5000];
+    this.addScore(TIERS[Math.min(TIERS.length-1, Math.floor(grabH/poleH*TIERS.length))]);
+    p.standUp();   // 蹲滑触杆时恢复站姿，对齐滑旗动画
     // 玩家抓旗：x 对齐旗杆左侧，进入滑旗动画；旗子从杆顶滑下
     p.clearMode='slide';
     p.vx=0; p.vy=0; p.dir=-1;                 // 面向旗杆

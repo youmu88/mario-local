@@ -1,7 +1,7 @@
 /* ===== 输入管理：键盘 + 触屏虚拟按键 ===== */
 class Input {
   constructor() {
-    this.keys = { left:false, right:false, jump:false, run:false, fire:false };
+    this.keys = { left:false, right:false, jump:false, run:false, fire:false, down:false };
     this.jumpPressed = false;   // 跳跃按下沿(供跳跃缓冲)
     this.firePressed = false;
     this.onTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;

@@ -548,6 +548,26 @@ SPRITES['mario_big_run'] = SPRITES['mario_big'];
 SPRITES['mario_big_runB'] = SPRITES['mario_big'];
 SPRITES['mario_big_runC'] = SPRITES['mario_big'];
 
+/* ===== 大马里奥蹲姿（蜷缩一团；官方派生帧加载后自动替换） 16x16 ===== */
+SPRITES['mario_big_crouch'] = makeSprite([
+  '.....RRRRRR.....',
+  '....RRRRRRRRR...',
+  '....RRRRRRRRR...',
+  '....SSSSSSSSS...',
+  '...SSKSSSSKSS...',
+  '...SSSSSSSSSS...',
+  '....HHHHHHHHH...',
+  '...RRRRRRRRRR...',
+  '..RRRBRRRRBRRR..',
+  '..RBBBBBBBBBBR..',
+  '..BBBBBBBBBBBB..',
+  '..BBBBBBBBBBBB..',
+  '...BB.BBBB.BB...',
+  '..HHH.HHHH.HHH..',
+  '..HHH.HHHH.HHH..',
+  '................',
+], PAL);
+
 /* ===== 官方马里奥主题素材（assets/sprites/*.png，异步加载后替换程序化精灵） =====
  * 素材来源（本仓库 assets/sprites/ 目录）：
  *  - mario_*.png : 任天堂《超级马里奥兄弟》NES 官方精灵提取（社区仓库 Hammania689/Super-Mario-Bros-1-1-in-Unity）
@@ -562,6 +582,8 @@ const OFFICIAL_URLS = {
   mario_small_jump: 'assets/sprites/mario_4.png',   // 跳跃
   mario_big:        'assets/sprites/mario_6.png',   // 大马里奥站
   mario_big_run:    'assets/sprites/mario_7.png',   // 大马里奥跑
+  mario_big_crouch: 'assets/sprites/mario_crouch.png', // 大马里奥蹲姿(官方站立帧派生:躯干压扁)
+  brick_q:          'assets/sprites/qblock_0.png',  // 问号块(SMB-Remastered 官方风)
   goomba:           'assets/sprites/goomba_0.png',  // 走路A
   goomba_w2:        'assets/sprites/goomba_1.png',  // 走路B
   goomba_squash:    'assets/sprites/goomba_4.png',  // 踩扁

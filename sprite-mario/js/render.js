@@ -179,6 +179,9 @@ export class Renderer {
     if (player.clearMode==='slide'){
       // 抓杆姿态：面向旗杆贴杆（使用站立帧）
       spr = player.small ? SPRITES.mario_small : SPRITES.mario_big;
+    } else if (player.crouching){
+      // 下蹲：蹲姿精灵（官方派生帧，程序化兜底）
+      spr = SPRITES.mario_big_crouch || SPRITES.mario_big;
     } else if (player.small){
       if (!player.onGround){ spr = SPRITES.mario_small_jump; }
       else if (Math.abs(player.vx)>0.1){

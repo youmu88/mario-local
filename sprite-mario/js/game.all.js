@@ -18,6 +18,7 @@ const CFG = {
   WALK_ACCEL: 0.10,     // 地面加速度（渐进起步，操作更可控）
   AIR_ACCEL: 0.055,     // 空中加速度（空中转向弱，还原原版）
   FRICTION: 0.15,       // 松开方向键的减速（轻微滑行）
+  CROUCH_FRICTION: 0.02,// 下蹲滑行减速（蹲滑穿缝，低摩擦长滑行，还原原版）
   TURN_DECEL: 0.20,     // 反向变道减速（快速换向但平滑）
   JUMP_VEL: -11.0,      // 跳跃初速（更高，跳得更远）
   DASH_JUMP_VEL: -13.0, // 冲刺大跳
@@ -599,6 +600,26 @@ SPRITES['mario_big_run'] = SPRITES['mario_big'];
 SPRITES['mario_big_runB'] = SPRITES['mario_big'];
 SPRITES['mario_big_runC'] = SPRITES['mario_big'];
 
+/* ===== 大马里奥蹲姿（蜷缩一团；官方派生帧加载后自动替换） 16x16 ===== */
+SPRITES['mario_big_crouch'] = makeSprite([
+  '.....RRRRRR.....',
+  '....RRRRRRRRR...',
+  '....RRRRRRRRR...',
+  '....SSSSSSSSS...',
+  '...SSKSSSSKSS...',
+  '...SSSSSSSSSS...',
+  '....HHHHHHHHH...',
+  '...RRRRRRRRRR...',
+  '..RRRBRRRRBRRR..',
+  '..RBBBBBBBBBBR..',
+  '..BBBBBBBBBBBB..',
+  '..BBBBBBBBBBBB..',
+  '...BB.BBBB.BB...',
+  '..HHH.HHHH.HHH..',
+  '..HHH.HHHH.HHH..',
+  '................',
+], PAL);
+
 /* ===== 官方马里奥主题素材（assets/sprites/*.png，异步加载后替换程序化精灵） =====
  * 素材来源（本仓库 assets/sprites/ 目录）：
  *  - mario_*.png : 任天堂《超级马里奥兄弟》NES 官方精灵提取（社区仓库 Hammania689/Super-Mario-Bros-1-1-in-Unity）
@@ -613,6 +634,8 @@ const OFFICIAL_URLS = {
   mario_small_jump: 'assets/sprites/mario_4.png',   // 跳跃
   mario_big:        'assets/sprites/mario_6.png',   // 大马里奥站
   mario_big_run:    'assets/sprites/mario_7.png',   // 大马里奥跑
+  mario_big_crouch: 'assets/sprites/mario_crouch.png', // 大马里奥蹲姿(官方站立帧派生:躯干压扁)
+  brick_q:          'assets/sprites/qblock_0.png',  // 问号块(SMB-Remastered 官方风)
   goomba:           'assets/sprites/goomba_0.png',  // 走路A
   goomba_w2:        'assets/sprites/goomba_1.png',  // 走路B
   goomba_squash:    'assets/sprites/goomba_4.png',  // 踩扁
@@ -1310,6 +1333,7 @@ class Player {
     this.dir=1;           // 面向
     this.onGround=false;
     this.running=false;
+    this.crouching=false;   // 下蹲中（仅大马里奥，经典规则）
     this.alive=true;
     this.starT = this.invincible? 99999 : 0;  // 无敌星星计时
     this.dying=false;     // 掉落坑
@@ -1327,15 +1351,41 @@ class Player {
   }
 
   setSize(){
+    const feet = (this.h!=null) ? this.y + this.h : null;  // 变身/受伤保持脚底（避免空中变大被瞬移到地面）
     if (this.small){ this.w=TILE; this.h=TILE; }
     else { this.w=TILE; this.h=TILE*2; } // 大马里奥2格高
     // 保持脚底对齐
-    this.y = (this.world.groundY*TILE) - this.h;
+    this.y = (feet!=null) ? feet - this.h : (this.world.groundY*TILE) - this.h;
   }
 
   get spriteKey(){
+    if (this.crouching) return 'mario_big_crouch';
     if (this.fire && !this.small) return 'mario_big'; // 火马里奥同大造型+不同色
     return this.small? 'mario_small':'mario_big';
+  }
+
+  // 站起：恢复大马里奥碰撞盒（脚底不动）
+  standUp(){
+    if (!this.crouching) return;
+    this.crouching = false; this.h = TILE*2; this.y -= TILE;
+  }
+
+  // 头顶新增空间是否有实心瓦片（能否从蹲姿站起）
+  canStand(){
+    const xs = Math.floor(this.x/TILE), xe = Math.floor((this.x+this.w-0.001)/TILE);
+    const r0 = Math.floor((this.y-TILE)/TILE), r1 = Math.floor((this.y-0.001)/TILE);
+    for (let r=r0; r<=r1; r++) for (let x=xs; x<=xe; x++)
+      if (this.world.tiles[r] && this.world.tiles[r][x]) return false;
+    return true;
+  }
+
+  // 当前碰撞盒是否与实心瓦片重叠（长大后嵌顶自动蹲检测）
+  bodyOverlaps(){
+    const xs = Math.floor(this.x/TILE), xe = Math.floor((this.x+this.w-0.001)/TILE);
+    const ys = Math.floor(this.y/TILE), ye = Math.floor((this.y+this.h-0.001)/TILE);
+    for (let r=ys; r<=ye; r++) for (let x=xs; x<=xe; x++)
+      if (this.world.tiles[r] && this.world.tiles[r][x]) return true;
+    return false;
   }
 
   update(input, sfx){
@@ -1368,11 +1418,28 @@ class Player {
       return;
     }
 
+    // ===== 下蹲（大马里奥经典规则）：地面按↓蹲下(碰撞盒减半,脚底不动)；
+    // 头顶被堵时松开↓仍保持蹲姿（低矮通道被迫蹲，可左右走）；主动蹲(按住↓)不迈步、带速度滑行
+    if (!this.small){
+      if (!this.crouching && this.onGround && input.keys.down){
+        this.crouching = true; this.h = TILE; this.y += TILE;
+      } else if (this.crouching && !input.keys.down && this.canStand()){
+        this.standUp();
+      }
+      // 吃蘑菇/火焰花长大时头顶嵌砖：自动进入蹲姿，避免被水平碰撞推挤
+      if (!this.crouching && this.bodyOverlaps()){
+        this.crouching = true; this.h = TILE; this.y += TILE;
+      }
+    }
+    const crouchLock = this.crouching && input.keys.down && this.onGround;  // 主动蹲锁定迈步(仅地面；空中可微调方向)
+
     // 冲刺/跑（渐进加速/减速：还原经典手感，消除“瞬间满速”导致的操作失误）
     const max = input.keys.run ? CFG_.DASH_SPEED : CFG_.RUN_SPEED;
-    const wantDir = input.keys.left ? -1 : (input.keys.right ? 1 : 0);
+    let wantDir = input.keys.left ? -1 : (input.keys.right ? 1 : 0);
+    if (crouchLock) wantDir = 0;   // 主动蹲下时锁定迈步（可带惯性滑入缝隙）
     let accel;
-    if (wantDir === 0){ accel = CFG_.FRICTION; }
+    if (crouchLock){ accel = CFG_.CROUCH_FRICTION; }  // 蹲滑：低摩擦长滑行
+    else if (wantDir === 0){ accel = CFG_.FRICTION; }
     else if (this.vx * wantDir < 0){ accel = CFG_.TURN_DECEL; }  // 反向变道：快速但平滑换向
     else { accel = this.onGround ? CFG_.WALK_ACCEL : CFG_.AIR_ACCEL; }
     this.vx += wantDir * accel;
@@ -1460,7 +1527,7 @@ class Player {
 
   damage(){
     if (this.starT>0 || this.respawnInvT>0) return;
-    if (!this.small){ this.small=true; this.setSize(); this.hurtFlashT=80; }   // 缩回
+    if (!this.small){ this.small=true; this.crouching=false; this.setSize(); this.hurtFlashT=80; }   // 缩回
     else { this.alive=false; }
   }
 }
@@ -1647,6 +1714,9 @@ class Renderer {
     if (player.clearMode==='slide'){
       // 抓杆姿态：面向旗杆贴杆（使用站立帧）
       spr = player.small ? SPRITES.mario_small : SPRITES.mario_big;
+    } else if (player.crouching){
+      // 下蹲：蹲姿精灵（官方派生帧，程序化兜底）
+      spr = SPRITES.mario_big_crouch || SPRITES.mario_big;
     } else if (player.small){
       if (!player.onGround){ spr = SPRITES.mario_small_jump; }
       else if (Math.abs(player.vx)>0.1){
@@ -1790,7 +1860,7 @@ function groundDecor(ctx,camX){
 /* ===== 输入管理：键盘 + 触屏虚拟按键 ===== */
 class Input {
   constructor() {
-    this.keys = { left:false, right:false, jump:false, run:false, fire:false };
+    this.keys = { left:false, right:false, jump:false, run:false, fire:false, down:false };
     this.jumpPressed = false;   // 跳跃按下沿(供跳跃缓冲)
     this.firePressed = false;
     this.onTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
@@ -2143,8 +2213,13 @@ class Game {
     if (this.world.flagReached) return;
     this.world.flagReached = true;
     this.sfx.flag();
-    this.addScore(1000);
     const p=this.player;
+    // 原版计分：按抓杆高度分档（杆底 100 → 杆顶 5000），抓得越高分越多
+    const w=this.world, poleH=6*TILE, base=w.groundY*TILE;
+    const grabH=Math.max(0, Math.min(poleH, base-(p.y+p.h)));
+    const TIERS=[100,200,400,800,1000,2000,4000,5000];
+    this.addScore(TIERS[Math.min(TIERS.length-1, Math.floor(grabH/poleH*TIERS.length))]);
+    p.standUp();   // 蹲滑触杆时恢复站姿，对齐滑旗动画
     // 玩家抓旗：x 对齐旗杆左侧，进入滑旗动画；旗子从杆顶滑下
     p.clearMode='slide';
     p.vx=0; p.vy=0; p.dir=-1;                 // 面向旗杆

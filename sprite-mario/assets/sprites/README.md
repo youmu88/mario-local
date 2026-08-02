@@ -18,6 +18,7 @@
 |---|---|
 | mario_small (站) / _run2 / _run3 / _run4 / _jump | mario_0 / 1 / 2 / 3 / 4 |
 | mario_big (站) / mario_big_run | mario_6 / 7 |
+| mario_big_crouch (蹲) | mario_crouch.png（mario_6 派生：躯干压扁 16×16） |
 | goomba / goomba_w2 / goomba_squash | goomba_0 / 1 / 4 |
 | koopa / koopa_w2 / koopa_shell | koopa_0 / 1 / 2 |
 | piranha / piranha_2 | piranha_0 / 1 |

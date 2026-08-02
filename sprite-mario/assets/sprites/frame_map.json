@@ -1,22 +1,23 @@
 {
-  "comment": "官方马里奥主题精灵帧映射表（与 sprites.js OFFICIAL_URLS 对应）",
-  "frames": {
-    "mario_small": "mario_0.png",
-    "mario_small_run2": "mario_1.png",
-    "mario_small_run3": "mario_2.png",
-    "mario_small_run4": "mario_3.png",
-    "mario_small_jump": "mario_4.png",
-    "mario_big": "mario_6.png",
-    "mario_big_run": "mario_7.png",
-    "mario_big_crouch": "mario_crouch.png",
-    "goomba": "goomba_0.png",
-    "goomba_w2": "goomba_1.png",
-    "goomba_squash": "goomba_4.png",
-    "koopa": "koopa_0.png",
-    "koopa_w2": "koopa_1.png",
-    "koopa_shell": "koopa_2.png",
-    "piranha": "piranha_0.png",
-    "piranha_2": "piranha_1.png"
+  "comment": "官方精灵帧映射表（与 sprites.js OFFICIAL_URLS 对应；R21 实证终版）",
+  "nes_kept": {
+    "mario_small/_run2/_run3/_run4/_jump": "mario_0/1/2/3/4.png（NES 官帧，R7 起在用）",
+    "mario_big / mario_big_run": "mario_6/7.png",
+    "mario_big_crouch": "mario_crouch.png（mario_6 派生）",
+    "goomba / goomba_w2 / goomba_squash": "goomba_0/1/4.png",
+    "koopa / koopa_w2 / koopa_shell": "koopa_0/1/2.png（SMM 源）",
+    "piranha / piranha_2": "piranha_0/1.png",
+    "brick_q": "qblock_0.png（周年庆问号块）"
   },
+  "remastered_new": {
+    "mario_fire": "remastered/rem_fire_stand.png（22×27 全烘焙真彩,Fire(3,2),ASCII验证）",
+    "mario_fire_run": "remastered/rem_fire_run.png（同帧,runB/C loader派生）",
+    "mario_fire_crouch": "remastered/rem_fire_crouch.png（站姿压高24px派生）",
+    "mushroom": "remastered/rem_mushroom.png（全烘焙,替换程序化）",
+    "1up": "remastered/rem_1up.png（全烘焙绿帽,替换程序化）",
+    "star": "remastered/rem_star.png（2色黄星,替换程序化）",
+    "fireball": "remastered/rem_fireball.png（3色,替换程序化）"
+  },
+  "r21_evidence": "SMB-Remastered 精灵表为「未rip占位绿格+全烘焙格」混合（绿(0,255,0)=ROM在线抽取空位）；全量替换经 v3~v5 提取+ASCII 逐帧验证证伪（占位格出货=绿块），仅 7 个全烘焙帧达出货标准；mario/goomba/piranha 回退 NES 官帧，spiny/coin/flower/砖块类保留程序化",
   "flyer": "goomba 帧 + 程序化红翅膀合成（makeFlyerFrame）"
 }

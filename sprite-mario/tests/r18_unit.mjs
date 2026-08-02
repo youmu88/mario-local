@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /* R18 单元测试：物理站立稳定性 / 贴墙不穿 / 管道上方无块 / 食人花碰撞盒 / 火球撞墙消散 */
-import { TILE, moveX, moveY } from '../sprite-mario/js/physics.js';
-import { generateLevel } from '../sprite-mario/js/levelgen.js';
-import { Piranha, Bullet } from '../sprite-mario/js/entities.js';
+import { TILE, moveX, moveY } from '../js/physics.js';
+import { generateLevel } from '../js/levelgen.js';
+import { Piranha, Bullet } from '../js/entities.js';
 
 let pass = 0, fail = 0;
 function assert(cond, msg){

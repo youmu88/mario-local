@@ -568,30 +568,40 @@ SPRITES['mario_big_crouch'] = makeSprite([
   '................',
 ], PAL);
 
-/* ===== 官方马里奥主题素材（assets/sprites/*.png，异步加载后替换程序化精灵） =====
+/* ===== 官方马里奥主题素材（assets/sprites/**.png，异步加载后替换程序化精灵） =====
  * 素材来源（本仓库 assets/sprites/ 目录）：
- *  - mario_*.png : 任天堂《超级马里奥兄弟》NES 官方精灵提取（社区仓库 Hammania689/Super-Mario-Bros-1-1-in-Unity）
- *  - goomba_*.png / koopa_*.png / piranha_*.png : 《Super Mario Maker》SMB1 主题官方素材提取（NostalgicMysticalCat/Super-Mario-Maker-Assets-Archive）
+ *  - mario_*.png / goomba_*.png / piranha_*.png : NES 官方精灵（R7 起在用，生产验证）
+ *  - koopa_*.png : 《Super Mario Maker》SMB1 主题官方素材（NostalgicMysticalCat/Super-Mario-Maker-Assets-Archive）
+ *  - remastered/*.png : AwkwaBear/SMB-Remastered 全烘焙真彩帧（R21 新增：火马里奥全套、蘑菇/1UP/星/火球；
+ *    该仓库精灵表为「未rip占位绿格+全烘焙格」混合，仅全烘焙格可出货，已逐帧 ASCII 像素验证）
  * 版权归 Nintendo 所有；仅供个人学习/自用项目，禁止商用分发。
  */
+const R21 = 'assets/sprites/remastered/';
 const OFFICIAL_URLS = {
-  mario_small:      'assets/sprites/mario_0.png',   // 站立
+  mario_small:      'assets/sprites/mario_0.png',   // 站立(NES官帧)
   mario_small_run2: 'assets/sprites/mario_1.png',   // 跑1
   mario_small_run3: 'assets/sprites/mario_2.png',   // 跑2
   mario_small_run4: 'assets/sprites/mario_3.png',   // 跑3
   mario_small_jump: 'assets/sprites/mario_4.png',   // 跳跃
   mario_big:        'assets/sprites/mario_6.png',   // 大马里奥站
   mario_big_run:    'assets/sprites/mario_7.png',   // 大马里奥跑
-  mario_big_crouch: 'assets/sprites/mario_crouch.png', // 大马里奥蹲姿(官方站立帧派生:躯干压扁)
-  brick_q:          'assets/sprites/qblock_0.png',  // 问号块(SMB-Remastered 官方风)
-  goomba:           'assets/sprites/goomba_0.png',  // 走路A
+  mario_big_crouch: 'assets/sprites/mario_crouch.png', // 大马里奥蹲姿(官方站立帧派生)
+  mario_fire:       R21+'rem_fire_stand.png',   // 火马里奥站(R21新增,全烘焙真彩22×27)
+  mario_fire_run:   R21+'rem_fire_run.png',     // 火马里奥跑(同帧,runB/C由loader派生)
+  mario_fire_crouch: R21+'rem_fire_crouch.png', // 火马里奥蹲(站姿压高24px派生)
+  brick_q:          'assets/sprites/qblock_0.png',  // 问号块(SMB-Remastered 周年庆)
+  goomba:           'assets/sprites/goomba_0.png',  // 走路A(NES官帧)
   goomba_w2:        'assets/sprites/goomba_1.png',  // 走路B
   goomba_squash:    'assets/sprites/goomba_4.png',  // 踩扁
-  koopa:            'assets/sprites/koopa_0.png',   // 走路A
-  koopa_w2:         'assets/sprites/koopa_1.png',   // 走路B
-  koopa_shell:      'assets/sprites/koopa_2.png',   // 壳
-  piranha:          'assets/sprites/piranha_0.png',
+  koopa:            'assets/sprites/koopa_0.png',   // 走路A(SMM源)
+  koopa_w2:         'assets/sprites/koopa_1.png',
+  koopa_shell:      'assets/sprites/koopa_2.png',
+  piranha:          'assets/sprites/piranha_0.png', // (NES官帧)
   piranha_2:        'assets/sprites/piranha_1.png',
+  mushroom:         R21+'rem_mushroom.png',     // 蘑菇(R21新增,全烘焙,替换程序化)
+  '1up':            R21+'rem_1up.png',          // 1UP绿菇(R21新增,替换程序化)
+  star:             R21+'rem_star.png',         // 星星(R21新增,替换程序化)
+  fireball:         R21+'rem_fireball.png',     // 火球(R21新增,替换程序化)
 };
 
 // 飞行敌人帧：在官方板栗仔上叠加红色翅膀
@@ -651,14 +661,15 @@ function loadOfficialSprite(key, url){
     let c = document.createElement('canvas');
     c.width = img.width; c.height = img.height;
     c.getContext('2d').drawImage(img, 0, 0);
-    // 官方 mario 帧统一镜像为面向右；mario_7(大马里奥跑)素材本身面向右，不翻转(避免头部反向)
+    // 官方 mario 帧统一镜像为面向右；mario_7(大马里奥跑)素材本身面向右，不翻转(避免头部反向)；
+    // R21 火马里奥帧(近对称正面站姿)随统一镜像，方向观感一致
     if (key.indexOf('mario_')===0 && key!=='mario_big_run') c = flipCanvas(c);
     SPRITES[key] = c;
     officialLoaded++;
-    // 大马里奥跑步：由单帧派生腾空/落地帧（官方素材加载后自动启用 3 帧跑步动画）
-    if (key==='mario_big_run'){
-      SPRITES['mario_big_runB'] = makeBigRunFrame(c, -1);
-      SPRITES['mario_big_runC'] = makeBigRunFrame(c, 1);
+    // 大/火马里奥跑步：由单帧派生腾空/落地帧（官方素材加载后自动启用 3 帧跑步动画）
+    if (key==='mario_big_run' || key==='mario_fire_run'){
+      SPRITES[key+'B'] = makeBigRunFrame(c, -1);
+      SPRITES[key+'C'] = makeBigRunFrame(c, 1);
     }
     // 飞行帧：goomba + 翅膀（goomba 就绪后合成）
     if (key==='goomba' || key==='goomba_w2'){

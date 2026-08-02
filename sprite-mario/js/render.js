@@ -181,10 +181,10 @@ export class Renderer {
     let spr;
     if (player.clearMode==='slide'){
       // 抓杆姿态：面向旗杆贴杆（使用站立帧）
-      spr = player.small ? SPRITES.mario_small : SPRITES.mario_big;
+      spr = player.small ? SPRITES.mario_small : ((player.fire && SPRITES.mario_fire) || SPRITES.mario_big);
     } else if (player.crouching){
-      // 下蹲：蹲姿精灵（官方派生帧，程序化兜底）
-      spr = SPRITES.mario_big_crouch || SPRITES.mario_big;
+      // 下蹲：蹲姿精灵（火马里奥用火焰配色蹲姿；官方帧优先，程序化兜底）
+      spr = (player.fire && SPRITES.mario_fire_crouch) || SPRITES.mario_big_crouch || SPRITES.mario_big;
     } else if (player.small){
       if (!player.onGround){ spr = SPRITES.mario_small_jump; }
       else if (Math.abs(player.vx)>0.1){
@@ -194,14 +194,16 @@ export class Renderer {
           : (r===1 ? SPRITES.mario_small_run3 : SPRITES.mario_small_run4);
       } else spr = SPRITES.mario_small;
     } else {
-      if (!player.onGround){ spr = SPRITES.mario_big; }
+      // 火马里奥：官方火焰配色帧（站/跑均加载成功时启用），否则回退大马里奥
+      const fk = (player.fire && SPRITES.mario_fire && SPRITES.mario_fire_run) ? 'mario_fire' : 'mario_big';
+      if (!player.onGround){ spr = SPRITES[fk]; }
       else if (Math.abs(player.vx)>0.1){
         // 大马里奥跑步：3 帧弹跳循环 [跑, 腾空, 落地]，不插入站立帧，动画更顺滑
         const r = Math.floor(player.frames/5)%3;
-        spr = r===0 ? SPRITES.mario_big_run
-          : (r===1 ? SPRITES.mario_big_runB : SPRITES.mario_big_runC);
+        spr = r===0 ? SPRITES[fk+'_run']
+          : (r===1 ? SPRITES[fk+'_runB'] : SPRITES[fk+'_runC']);
       }
-      else spr = SPRITES.mario_big;
+      else spr = SPRITES[fk];
     }
     if(!spr) spr = SPRITES.mario_small;
     const ft = player.hurtFlashT>0 ? player.hurtFlashT : (player.respawnInvT||0);

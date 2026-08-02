@@ -1,0 +1,39 @@
+# CI 轻量门禁（R21 立项搭建）
+# 决策记录：CDP 端到端测试（tests/r1*_cdp.js）写死 macOS Chrome 路径，CI 化 flaky 风险高，
+# 保持本地执行（npm run test:e2e）；CI 专注快速稳定门禁：语法 → 构建 → 产物断言 → 单元测试。
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 语法检查（全量 JS，node22 自动识别 ESM）
+        working-directory: sprite-mario
+        run: |
+          set -e
+          for f in js/*.js build.js tests/*.js tests/*.mjs; do
+            echo "check $f"; node --check "$f"
+          done
+      - name: 构建单文件版
+        working-directory: sprite-mario
+        run: npm run build
+      - name: 构建产物断言（R21 素材映射/火马里奥/无翻转特判）
+        working-directory: sprite-mario
+        run: |
+          grep -q 'assets/sprites/remastered/' js/game.all.js
+          grep -q 'rem_fire_stand.png' js/game.all.js
+          grep -q 'mario_fire_crouch' js/game.all.js
+          grep -q 'rem_mushroom.png' js/game.all.js
+          grep -q "assets/sprites/mario_0.png" js/game.all.js
+          echo '构建断言通过'
+      - name: 单元测试（物理/关卡/实体）
+        working-directory: sprite-mario
+        run: npm test

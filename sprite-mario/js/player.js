@@ -45,7 +45,7 @@ export class Player {
 
   get spriteKey(){
     if (this.crouching) return 'mario_big_crouch';
-    if (this.fire && !this.small) return 'mario_big'; // 火马里奥同大造型+不同色
+    if (this.fire && !this.small) return 'mario_fire'; // 火马里奥官方火焰配色帧（R21 新增）
     return this.small? 'mario_small':'mario_big';
   }
 

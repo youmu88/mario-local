@@ -1,5 +1,5 @@
 /* 离线 Service Worker（network-first：代码更新后刷新即生效，离线时回退缓存） */
-const CACHE = 'super-mario-v8';
+const CACHE = 'super-mario-v9';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/style.css',
   './js/game.all.js',

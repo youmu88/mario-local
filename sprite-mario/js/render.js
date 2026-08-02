@@ -92,8 +92,8 @@ export class Renderer {
       h=Math.max(spl.height/s, Math.round(h*s/spl.height)*spl.height/s);
       w=h/spl.height*spl.width;
       const q=1/s;
-      sx=Math.round((sx-(h-h0)*0)/q)*q;  // x 量化
-      sy=Math.round(sy+(h0-h))/q*q;      // 底部锚定后 y 量化
+      sx=Math.round(sx/q)*q;              // x 量化到设备像素网格
+      sy=Math.round((sy+(h0-h))/q)*q;     // 底部锚定后 y 量化到同一网格
     }
     ctx.save();
     ctx.globalAlpha = o.alpha!==undefined?o.alpha:1;
